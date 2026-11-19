@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -52,6 +53,17 @@ public class CompanyServiceImpl implements CompanyService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Optional<CompanyResponse> findByNameIgnoreCase(UUID userId, String name) {
+        String normalizedName = normalize(name);
+        if (normalizedName == null) {
+            return Optional.empty();
+        }
+        return companyRepository.findByUserIdAndNameIgnoreCase(userId, normalizedName)
+                .map(companyMapper::toResponse);
+    }
+
+    @Override
     public CompanyResponse create(UUID userId, CompanyCreateRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
@@ -64,6 +76,16 @@ public class CompanyServiceImpl implements CompanyService {
                 request.notes()
         );
         return companyMapper.toResponse(companyRepository.save(company));
+    }
+
+    @Override
+    public CompanyResponse findOrCreate(UUID userId, String name, String website) {
+        String normalizedName = requireName(name);
+        return findByNameIgnoreCase(userId, normalizedName)
+                .orElseGet(() -> create(
+                        userId,
+                        new CompanyCreateRequest(normalizedName, normalize(website), null, null, null)
+                ));
     }
 
     @Override
@@ -88,6 +110,14 @@ public class CompanyServiceImpl implements CompanyService {
         return companyRepository.findById(companyId)
                 .filter(company -> company.getUser().getId().equals(userId))
                 .orElseThrow(() -> new ResourceNotFoundException("Company not found: " + companyId));
+    }
+
+    private String requireName(String value) {
+        String normalized = normalize(value);
+        if (normalized == null) {
+            throw new IllegalArgumentException("Company name is required");
+        }
+        return normalized;
     }
 
     private String normalize(String value) {

@@ -55,4 +55,19 @@ export class ApplicationService {
   companies() {
     return this.api.get<PageResponse<CompanyOption>>('/companies?page=0&size=100&sortBy=name&direction=asc');
   }
+
+  parseJobPosting(url: string) {
+    return this.api.post<{
+      jobPostingUrl: string;
+      companyId: string | null;
+      companyName: string | null;
+      companyWebsite: string | null;
+      companyMatched: boolean;
+      position: string | null;
+      jobDescription: string | null;
+      location: string | null;
+      salaryExpectation: number | null;
+      message: string;
+    }>('/job-postings/parse', { url });
+  }
 }

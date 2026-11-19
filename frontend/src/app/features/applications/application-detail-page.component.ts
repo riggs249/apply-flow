@@ -23,9 +23,15 @@ import { ResumeService } from '../resumes/resume.service';
         <article class="panel">
           <h2>Application overview</h2>
           <div class="details">@for (item of details; track item.label) { <div><span>{{ item.label }}</span><strong>{{ item.value }}</strong></div> }</div>
+          @if (application.jobPostingUrl) {
+            <div class="link-block">
+              <span>Job posting</span>
+              <a [href]="application.jobPostingUrl" target="_blank" rel="noopener noreferrer">{{ application.jobPostingUrl }}</a>
+            </div>
+          }
           @if (application.resumeId) {
             <div class="resume-block">
-              <h2 class="description-title">Resume</h2>
+              <h2 class="section-divider">Resume</h2>
               <p class="notes">{{ application.resumeDescription || 'No description for this resume.' }}</p>
               <button class="secondary-button" type="button" (click)="previewResume()"><mat-icon>visibility</mat-icon> View CV</button>
             </div>
@@ -34,10 +40,33 @@ import { ResumeService } from '../resumes/resume.service';
         <article class="panel">
           <h2>Personal notes</h2>
           <p class="notes">{{ application.personalNotes || 'No notes added yet.' }}</p>
-          <h2 class="description-title">Job description</h2>
-          <p class="notes">{{ application.jobDescription || 'No job description added.' }}</p>
         </article>
       </section>
+
+      <section class="panel description-panel">
+        <div class="description-header">
+          <h2>Job description</h2>
+          @if (canToggleDescription) {
+            <button class="text-button" type="button" (click)="toggleDescription()">
+              {{ descriptionExpanded ? 'Show less' : 'Show more' }}
+              <mat-icon>{{ descriptionExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </button>
+          }
+        </div>
+        @if (!application.jobDescription) {
+          <p class="muted">No job description added.</p>
+        } @else {
+          <div class="description-wrap">
+            <div class="description-body" [class.collapsed]="!descriptionExpanded && canToggleDescription">
+              <p class="notes description-text">{{ application.jobDescription }}</p>
+            </div>
+            @if (canToggleDescription && !descriptionExpanded) {
+              <div class="description-fade"></div>
+            }
+          </div>
+        }
+      </section>
+
       @if (previewUrl) {
         <section class="panel preview-panel">
           <div class="preview-header">
@@ -52,15 +81,71 @@ import { ResumeService } from '../resumes/resume.service';
   `,
   styles: [`
     .header-actions { display: flex; gap: .6rem; }
-    .detail-grid { display: grid; gap: 1rem; grid-template-columns: 1fr 1fr; }
-    .timeline-panel, .preview-panel { margin-top: 1rem; }
+    .detail-grid { display: grid; gap: 1rem; grid-template-columns: 1.1fr .9fr; }
+    .timeline-panel, .preview-panel, .description-panel { margin-top: 1rem; }
     h2 { color: var(--af-text); font-size: 1rem; margin: 0 0 1.25rem; }
     .details { display: grid; gap: 1.25rem; grid-template-columns: repeat(2, 1fr); }
     .details span { color: var(--af-text-faint); display: block; font-size: .7rem; margin-bottom: .3rem; }
     .details strong { color: var(--af-text-secondary); font-size: .82rem; }
-    .notes { color: var(--af-text-muted); font-size: .82rem; line-height: 1.7; white-space: pre-wrap; }
-    .description-title { border-top: 1px solid var(--af-divider); margin-top: 1.5rem; padding-top: 1.5rem; }
+    .notes { color: var(--af-text-muted); font-size: .82rem; line-height: 1.7; margin: 0; white-space: pre-wrap; }
+    .section-divider { border-top: 1px solid var(--af-divider); margin-top: 1.5rem; padding-top: 1.5rem; }
+    .link-block {
+      border-top: 1px solid var(--af-divider);
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
+    }
+    .link-block span {
+      color: var(--af-text-faint);
+      display: block;
+      font-size: .7rem;
+      margin-bottom: .35rem;
+    }
+    .link-block a {
+      color: var(--af-accent);
+      display: inline-block;
+      font-size: .82rem;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
     .resume-block .secondary-button { margin-top: .75rem; }
+    .description-header {
+      align-items: center;
+      display: flex;
+      gap: 1rem;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .description-header h2 { margin: 0; }
+    .text-button {
+      align-items: center;
+      background: transparent;
+      border: 0;
+      color: var(--af-accent);
+      cursor: pointer;
+      display: inline-flex;
+      font: inherit;
+      font-size: .82rem;
+      font-weight: 600;
+      gap: .15rem;
+      padding: 0;
+    }
+    .text-button mat-icon { font-size: 1.1rem; height: 1.1rem; width: 1.1rem; }
+    .description-wrap { position: relative; }
+    .description-body.collapsed {
+      max-height: 18rem;
+      overflow: hidden;
+    }
+    .description-fade {
+      background: linear-gradient(to bottom, transparent, var(--af-surface));
+      bottom: 0;
+      height: 4.5rem;
+      left: 0;
+      pointer-events: none;
+      position: absolute;
+      right: 0;
+    }
+    .description-text { max-width: 72ch; }
     .preview-header { align-items: center; display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .85rem; }
     .preview-header h2 { margin: 0; }
     .preview-frame {
@@ -70,7 +155,7 @@ import { ResumeService } from '../resumes/resume.service';
       height: min(70vh, 820px);
       width: 100%;
     }
-    .muted { color: var(--af-text-faint); font-size: .82rem; }
+    .muted { color: var(--af-text-faint); font-size: .82rem; margin: 0; }
     .timeline { list-style: none; margin: 0; padding: 0; }
     .timeline li { display: flex; gap: .8rem; padding: .75rem 0; }
     .timeline-dot {
@@ -93,6 +178,8 @@ import { ResumeService } from '../resumes/resume.service';
   `],
 })
 export class ApplicationDetailPageComponent implements OnInit, OnDestroy {
+  private static readonly DESCRIPTION_COLLAPSE_CHARS = 700;
+
   private readonly service = inject(ApplicationService);
   private readonly resumeService = inject(ResumeService);
   private readonly sanitizer = inject(DomSanitizer);
@@ -104,6 +191,8 @@ export class ApplicationDetailPageComponent implements OnInit, OnDestroy {
   loading = true;
   error = '';
   details: { label: string; value: string }[] = [];
+  descriptionExpanded = false;
+  canToggleDescription = false;
   previewUrl: SafeResourceUrl | null = null;
   private objectUrl: string | null = null;
 
@@ -112,6 +201,8 @@ export class ApplicationDetailPageComponent implements OnInit, OnDestroy {
     this.service.get(id).subscribe({
       next: item => {
         this.application = item;
+        this.canToggleDescription = (item.jobDescription?.length ?? 0) > ApplicationDetailPageComponent.DESCRIPTION_COLLAPSE_CHARS;
+        this.descriptionExpanded = !this.canToggleDescription;
         const resumeLabel = item.resumeTitle || item.resumeVersion || 'Not specified';
         this.details = [
           { label: 'Status', value: this.label(item.status) },
@@ -140,6 +231,10 @@ export class ApplicationDetailPageComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.closePreview();
+  }
+
+  toggleDescription(): void {
+    this.descriptionExpanded = !this.descriptionExpanded;
   }
 
   previewResume(): void {

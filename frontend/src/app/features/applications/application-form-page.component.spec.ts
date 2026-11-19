@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 import { ApplicationService } from './application.service';
 import { ApplicationFormPageComponent } from './application-form-page.component';
 import { ResumeService } from '../resumes/resume.service';
+import { CompanyService } from '../companies/company.service';
 
 describe('ApplicationFormPageComponent', () => {
   let fixture: ComponentFixture<ApplicationFormPageComponent>;
@@ -12,7 +13,13 @@ describe('ApplicationFormPageComponent', () => {
   let service: jasmine.SpyObj<ApplicationService>;
 
   beforeEach(async () => {
-    service = jasmine.createSpyObj<ApplicationService>('ApplicationService', ['companies', 'create', 'update', 'get']);
+    service = jasmine.createSpyObj<ApplicationService>('ApplicationService', [
+      'companies',
+      'create',
+      'update',
+      'get',
+      'parseJobPosting',
+    ]);
     service.companies.and.returnValue(of({
       content: [],
       page: 0,
@@ -24,6 +31,7 @@ describe('ApplicationFormPageComponent', () => {
     }));
     const resumeService = jasmine.createSpyObj<ResumeService>('ResumeService', ['list']);
     resumeService.list.and.returnValue(of([]));
+    const companyService = jasmine.createSpyObj<CompanyService>('CompanyService', ['create']);
 
     await TestBed.configureTestingModule({
       imports: [ApplicationFormPageComponent],
@@ -32,6 +40,7 @@ describe('ApplicationFormPageComponent', () => {
         provideRouter([]),
         { provide: ApplicationService, useValue: service },
         { provide: ResumeService, useValue: resumeService },
+        { provide: CompanyService, useValue: companyService },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => null } } } },
       ],
     }).compileComponents();
@@ -41,7 +50,8 @@ describe('ApplicationFormPageComponent', () => {
   });
 
   it('requires a company and position', () => {
-    component.form.setValue({
+    component.setCompanyMode('existing');
+    component.form.patchValue({
       companyId: '',
       position: '',
       jobDescription: '',
@@ -62,5 +72,9 @@ describe('ApplicationFormPageComponent', () => {
     expect(component.form.controls.companyId.invalid).toBeTrue();
     expect(component.form.controls.position.invalid).toBeTrue();
     expect(service.create).not.toHaveBeenCalled();
+  });
+
+  it('defaults to create-new company when none exist', () => {
+    expect(component.companyMode).toBe('new');
   });
 });

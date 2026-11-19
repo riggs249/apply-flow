@@ -59,6 +59,21 @@ class CompanyServiceImplTest {
     }
 
     @Test
+    void findOrCreateReturnsExistingCompany() {
+        UUID userId = UUID.randomUUID();
+        Company existing = new Company(org.mockito.Mockito.mock(User.class), "Acme", null, null, null, null);
+        CompanyResponse response = new CompanyResponse(
+                UUID.randomUUID(), "Acme", null, null, null, null, null, null
+        );
+        when(companyRepository.findByUserIdAndNameIgnoreCase(userId, "Acme")).thenReturn(Optional.of(existing));
+        when(companyMapper.toResponse(existing)).thenReturn(response);
+
+        CompanyResponse result = companyService.findOrCreate(userId, " Acme ", "https://acme.example");
+
+        assertThat(result).isEqualTo(response);
+    }
+
+    @Test
     void findByIdRejectsCompanyOwnedByAnotherUser() {
         UUID ownerId = UUID.randomUUID();
         UUID attackerId = UUID.randomUUID();
