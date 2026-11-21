@@ -94,6 +94,16 @@ mat-icon {
   overflow: visible;
 }
 
+/* —— Confirm dialog (CDK overlay) —— */
+.af-confirm-backdrop {
+  background: rgba(21, 32, 41, 0.45);
+}
+
+.af-confirm-panel {
+  display: block;
+  max-width: calc(100vw - 1.5rem);
+}
+
 /* —— Pipeline drag preview (rendered in CDK overlay, outside component encapsulation) —— */
 .cdk-drag-preview {
   box-sizing: border-box;

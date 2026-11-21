@@ -6,6 +6,7 @@ import { ApplicationService } from './application.service';
 import { ApplicationActivity, ApplicationRecord } from './application.models';
 import { DatePipe } from '@angular/common';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { ResumeService } from '../resumes/resume.service';
 
 @Component({
@@ -99,6 +100,7 @@ export class ApplicationDetailPageComponent implements OnInit, OnDestroy {
 
   private readonly service = inject(ApplicationService);
   private readonly resumeService = inject(ResumeService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -175,10 +177,17 @@ export class ApplicationDetailPageComponent implements OnInit, OnDestroy {
   }
 
   deleteApplication(): void {
-    if (!this.application || !confirm(`Delete the application for ${this.application.position}?`)) return;
-    this.service.delete(this.application.id).subscribe({
-      next: () => this.router.navigateByUrl('/applications'),
-      error: () => this.error = 'Application could not be deleted.',
+    if (!this.application) return;
+    const application = this.application;
+    this.confirmDialog.confirm({
+      title: 'Delete application',
+      message: `Delete the application for ${application.position}? This cannot be undone.`,
+    }).subscribe(confirmed => {
+      if (!confirmed) return;
+      this.service.delete(application.id).subscribe({
+        next: () => this.router.navigateByUrl('/applications'),
+        error: () => this.error = 'Application could not be deleted.',
+      });
     });
   }
 

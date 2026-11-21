@@ -4,6 +4,8 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { scrollToTop } from '../../shared/utils/scroll';
 import { CompanyRecord } from './company.models';
 import { CompanyService } from './company.service';
 
@@ -81,6 +83,7 @@ import { CompanyService } from './company.service';
 })
 export class CompanyPageComponent implements OnInit {
   private readonly service = inject(CompanyService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
 
@@ -137,6 +140,7 @@ export class CompanyPageComponent implements OnInit {
     this.editingId = undefined;
     this.form.reset({ name: '', website: '', industry: '', location: '', notes: '' });
     this.showForm = true;
+    scrollToTop();
   }
 
   edit(company: CompanyRecord): void {
@@ -149,6 +153,7 @@ export class CompanyPageComponent implements OnInit {
       notes: company.notes ?? '',
     });
     this.showForm = true;
+    scrollToTop();
   }
 
   closeForm(): void {
@@ -186,10 +191,15 @@ export class CompanyPageComponent implements OnInit {
   }
 
   deleteCompany(company: CompanyRecord): void {
-    if (!confirm(`Delete ${company.name}? Applications linked to it may block deletion.`)) return;
-    this.service.delete(company.id).subscribe({
-      next: () => this.load(),
-      error: () => { this.error = 'Company could not be deleted.'; },
+    this.confirmDialog.confirm({
+      title: 'Delete company',
+      message: `Delete ${company.name}? Applications linked to it may block deletion.`,
+    }).subscribe(confirmed => {
+      if (!confirmed) return;
+      this.service.delete(company.id).subscribe({
+        next: () => this.load(),
+        error: () => { this.error = 'Company could not be deleted.'; },
+      });
     });
   }
 }

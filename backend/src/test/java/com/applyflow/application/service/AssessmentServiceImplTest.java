@@ -37,7 +37,7 @@ class AssessmentServiceImplTest {
         when(application.getUser()).thenReturn(owner);
         when(applicationRepository.findById(applicationId)).thenReturn(Optional.of(application));
         AssessmentCreateRequest request = new AssessmentCreateRequest(applicationId, "Take-home",
-                "Coding", null, null, AssessmentStatus.NOT_STARTED, null, null);
+                "Coding", null, null, null, AssessmentStatus.NOT_STARTED, null, null);
 
         assertThatThrownBy(() -> service.create(attackerId, request))
                 .isInstanceOf(ResourceNotFoundException.class);

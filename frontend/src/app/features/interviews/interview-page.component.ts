@@ -5,6 +5,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { ApplicationService } from '../applications/application.service';
 import { ApplicationRecord } from '../applications/application.models';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { scrollToTop } from '../../shared/utils/scroll';
 import { InterviewOutcome, InterviewRecord } from './interview.models';
 import { InterviewService } from './interview.service';
 
@@ -54,6 +56,7 @@ import { InterviewService } from './interview.service';
 export class InterviewPageComponent implements OnInit {
   private readonly interviewsApi = inject(InterviewService);
   private readonly applicationsApi = inject(ApplicationService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly fb = inject(FormBuilder);
   readonly outcomes: InterviewOutcome[] = ['PENDING', 'PASSED', 'FAILED', 'RESCHEDULED', 'CANCELLED'];
   readonly form = this.fb.nonNullable.group({
@@ -98,12 +101,14 @@ export class InterviewPageComponent implements OnInit {
     this.editingId = undefined;
     this.form.reset({ applicationId: '', scheduledAt: '', interviewType: '', interviewer: '', interviewerContact: '', locationOrMeetingUrl: '', preparationNotes: '', reflection: '', outcome: 'PENDING' });
     this.showForm = true;
+    scrollToTop();
   }
 
   edit(item: InterviewRecord): void {
     this.editingId = item.id;
     this.form.patchValue({ applicationId: item.applicationId, scheduledAt: this.toLocalDateTime(item.scheduledAt), interviewType: item.interviewType, interviewer: item.interviewer ?? '', interviewerContact: item.interviewerContact ?? '', locationOrMeetingUrl: item.locationOrMeetingUrl ?? '', preparationNotes: item.preparationNotes ?? '', reflection: item.reflection ?? '', outcome: item.outcome });
     this.showForm = true;
+    scrollToTop();
   }
 
   closeForm(): void { this.showForm = false; this.editingId = undefined; }
@@ -118,8 +123,16 @@ export class InterviewPageComponent implements OnInit {
   }
 
   deleteInterview(item: InterviewRecord): void {
-    if (!confirm(`Delete the interview for ${item.companyName}?`)) return;
-    this.interviewsApi.delete(item.id).subscribe({ next: () => this.load(), error: () => this.error = 'Interview could not be deleted.' });
+    this.confirmDialog.confirm({
+      title: 'Delete interview',
+      message: `Delete the interview for ${item.companyName}?`,
+    }).subscribe(confirmed => {
+      if (!confirmed) return;
+      this.interviewsApi.delete(item.id).subscribe({
+        next: () => this.load(),
+        error: () => this.error = 'Interview could not be deleted.',
+      });
+    });
   }
 
   toLocalDateTime(value: string): string {

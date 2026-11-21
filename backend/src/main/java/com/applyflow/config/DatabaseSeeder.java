@@ -251,7 +251,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                             String instructions, Instant dueAt, AssessmentStatus status,
                             String result, String notes) {
         assessmentRepository.save(new Assessment(application, title, type, instructions,
-                dueAt, status, result, notes));
+                null, dueAt, status, result, notes));
     }
 
     private void reminder(User user, JobApplication application, String title,

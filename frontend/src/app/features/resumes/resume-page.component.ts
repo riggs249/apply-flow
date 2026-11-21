@@ -3,6 +3,8 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { scrollToTop } from '../../shared/utils/scroll';
 import { ResumeRecord } from './resume.models';
 import { ResumeService } from './resume.service';
 
@@ -91,6 +93,7 @@ import { ResumeService } from './resume.service';
 })
 export class ResumePageComponent implements OnInit, OnDestroy {
   private readonly service = inject(ResumeService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly fb = inject(FormBuilder);
   private readonly sanitizer = inject(DomSanitizer);
 
@@ -140,6 +143,7 @@ export class ResumePageComponent implements OnInit, OnDestroy {
     this.fileError = '';
     this.form.reset({ title: '', description: '' });
     this.showForm = true;
+    scrollToTop();
   }
 
   edit(resume: ResumeRecord): void {
@@ -148,6 +152,7 @@ export class ResumePageComponent implements OnInit, OnDestroy {
     this.fileError = '';
     this.form.reset({ title: resume.title, description: resume.description ?? '' });
     this.showForm = true;
+    scrollToTop();
   }
 
   closeForm(): void {
@@ -229,13 +234,18 @@ export class ResumePageComponent implements OnInit, OnDestroy {
   }
 
   remove(resume: ResumeRecord): void {
-    if (!confirm(`Delete “${resume.title}”? Applications using it will keep no linked resume.`)) return;
-    this.service.delete(resume.id).subscribe({
-      next: () => {
-        if (this.previewTitle === resume.title) this.closePreview();
-        this.load();
-      },
-      error: () => this.error = 'Resume could not be deleted.',
+    this.confirmDialog.confirm({
+      title: 'Delete resume',
+      message: `Delete “${resume.title}”? Applications using it will keep no linked resume.`,
+    }).subscribe(confirmed => {
+      if (!confirmed) return;
+      this.service.delete(resume.id).subscribe({
+        next: () => {
+          if (this.previewTitle === resume.title) this.closePreview();
+          this.load();
+        },
+        error: () => this.error = 'Resume could not be deleted.',
+      });
     });
   }
 

@@ -5,6 +5,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { ApplicationService } from '../applications/application.service';
 import { ApplicationRecord } from '../applications/application.models';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { scrollToTop } from '../../shared/utils/scroll';
 import { ReminderRecord, ReminderType } from './reminder.models';
 import { ReminderService } from './reminder.service';
 
@@ -60,6 +62,7 @@ import { ReminderService } from './reminder.service';
 export class ReminderPageComponent implements OnInit {
   private readonly reminderApi = inject(ReminderService);
   private readonly applicationsApi = inject(ApplicationService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly fb = inject(FormBuilder);
   readonly types: ReminderType[] = ['RECRUITER_FOLLOW_UP', 'UPCOMING_INTERVIEW', 'ASSESSMENT_DEADLINE', 'APPLICATION_DEADLINE', 'CUSTOM'];
   readonly form = this.fb.nonNullable.group({
@@ -109,12 +112,14 @@ export class ReminderPageComponent implements OnInit {
     this.editingId = undefined;
     this.form.reset({ title: '', remindAt: '', reminderType: 'CUSTOM', applicationId: '', description: '' });
     this.showForm = true;
+    scrollToTop();
   }
 
   edit(item: ReminderRecord): void {
     this.editingId = item.id;
     this.form.patchValue({ title: item.title, remindAt: this.toLocalDateTime(item.remindAt), reminderType: item.reminderType, applicationId: item.applicationId ?? '', description: item.description ?? '' });
     this.showForm = true;
+    scrollToTop();
   }
 
   closeForm(): void { this.showForm = false; this.editingId = undefined; }
@@ -131,7 +136,18 @@ export class ReminderPageComponent implements OnInit {
 
   complete(item: ReminderRecord): void { this.reminderApi.complete(item.id).subscribe({ next: () => this.load(), error: () => this.error = 'Reminder could not be completed.' }); }
   reopen(item: ReminderRecord): void { this.reminderApi.reopen(item.id).subscribe({ next: () => this.load(), error: () => this.error = 'Reminder could not be reopened.' }); }
-  deleteReminder(item: ReminderRecord): void { if (!confirm(`Delete the reminder "${item.title}"?`)) return; this.reminderApi.delete(item.id).subscribe({ next: () => this.load(), error: () => this.error = 'Reminder could not be deleted.' }); }
+  deleteReminder(item: ReminderRecord): void {
+    this.confirmDialog.confirm({
+      title: 'Delete reminder',
+      message: `Delete the reminder “${item.title}”?`,
+    }).subscribe(confirmed => {
+      if (!confirmed) return;
+      this.reminderApi.delete(item.id).subscribe({
+        next: () => this.load(),
+        error: () => this.error = 'Reminder could not be deleted.',
+      });
+    });
+  }
 
   toLocalDateTime(value: string): string {
     const date = new Date(value);

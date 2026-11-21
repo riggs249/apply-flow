@@ -29,6 +29,9 @@ public class Assessment extends BaseEntity {
     @Column(columnDefinition = "text")
     private String instructions;
 
+    @Column(name = "link_url", length = 1000)
+    private String linkUrl;
+
     @Column(name = "due_at")
     private Instant dueAt;
 
@@ -49,11 +52,12 @@ public class Assessment extends BaseEntity {
     }
 
     public Assessment(JobApplication application, String title, String assessmentType, String instructions,
-                      Instant dueAt, AssessmentStatus status, String result, String notes) {
+                      String linkUrl, Instant dueAt, AssessmentStatus status, String result, String notes) {
         this.application = application;
         this.title = title;
         this.assessmentType = assessmentType;
         this.instructions = instructions;
+        this.linkUrl = linkUrl;
         this.dueAt = dueAt;
         this.status = status;
         this.result = result;
@@ -61,11 +65,12 @@ public class Assessment extends BaseEntity {
         this.completedAt = status == AssessmentStatus.COMPLETED ? Instant.now() : null;
     }
 
-    public void update(String title, String assessmentType, String instructions, Instant dueAt,
+    public void update(String title, String assessmentType, String instructions, String linkUrl, Instant dueAt,
                        AssessmentStatus status, String result, String notes) {
         this.title = title;
         this.assessmentType = assessmentType;
         this.instructions = instructions;
+        this.linkUrl = linkUrl;
         this.dueAt = dueAt;
         this.status = status;
         this.result = result;
@@ -83,6 +88,7 @@ public class Assessment extends BaseEntity {
     public String getTitle() { return title; }
     public String getAssessmentType() { return assessmentType; }
     public String getInstructions() { return instructions; }
+    public String getLinkUrl() { return linkUrl; }
     public Instant getDueAt() { return dueAt; }
     public Instant getCompletedAt() { return completedAt; }
     public AssessmentStatus getStatus() { return status; }

@@ -39,7 +39,8 @@ public class AssessmentServiceImpl implements AssessmentService {
     public AssessmentResponse create(UUID userId, AssessmentCreateRequest request) {
         JobApplication application = getApplication(userId, request.applicationId());
         Assessment assessment = new Assessment(application, request.title().trim(), request.assessmentType().trim(),
-                request.instructions(), request.dueAt(), request.status(), request.result(), request.notes());
+                request.instructions(), normalizeLink(request.linkUrl()), request.dueAt(), request.status(),
+                request.result(), request.notes());
         return toResponse(assessmentRepository.save(assessment));
     }
 
@@ -47,7 +48,7 @@ public class AssessmentServiceImpl implements AssessmentService {
     public AssessmentResponse update(UUID userId, UUID assessmentId, AssessmentUpdateRequest request) {
         Assessment assessment = getOwned(userId, assessmentId);
         assessment.update(request.title().trim(), request.assessmentType().trim(), request.instructions(),
-                request.dueAt(), request.status(), request.result(), request.notes());
+                normalizeLink(request.linkUrl()), request.dueAt(), request.status(), request.result(), request.notes());
         return toResponse(assessment);
     }
 
@@ -71,7 +72,14 @@ public class AssessmentServiceImpl implements AssessmentService {
         return new AssessmentResponse(assessment.getId(), assessment.getApplication().getId(),
                 assessment.getApplication().getJobTitle(), assessment.getApplication().getCompany().getName(),
                 assessment.getTitle(), assessment.getAssessmentType(), assessment.getInstructions(),
-                assessment.getDueAt(), assessment.getCompletedAt(), assessment.getStatus(),
+                assessment.getLinkUrl(), assessment.getDueAt(), assessment.getCompletedAt(), assessment.getStatus(),
                 assessment.getResult(), assessment.getNotes(), assessment.getCreatedAt(), assessment.getUpdatedAt());
+    }
+
+    private String normalizeLink(String linkUrl) {
+        if (linkUrl == null || linkUrl.isBlank()) {
+            return null;
+        }
+        return linkUrl.trim();
     }
 }
