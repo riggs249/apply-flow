@@ -7,7 +7,7 @@ import { AuthService } from './auth.service';
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  const isAuthEndpoint = /\/auth\/(login|register|refresh)$/.test(request.url);
+  const isAuthEndpoint = /\/auth\/(login|register|refresh|verify-email|resend-verification)$/.test(request.url);
 
   const token = auth.getToken();
   const authenticatedRequest = token && !isAuthEndpoint

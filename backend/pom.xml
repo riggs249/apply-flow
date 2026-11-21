@@ -14,8 +14,8 @@
     <groupId>com.applyflow</groupId>
     <artifactId>applyflow-backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>ApplyFlow Backend</name>
-    <description>Backend API for the ApplyFlow job application management platform</description>
+    <name>HanapTracker Backend</name>
+    <description>Backend API for the HanapTracker job application management platform</description>
 
     <properties>
         <java.version>21</java.version>
@@ -41,6 +41,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <!-- SMTP email delivery for verification and notifications -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
         <!-- JWT validation and Nimbus encoder/decoder integration -->
         <dependency>

@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 
-const PAGE_SIZE_KEY = 'applyflow.applicationsPageSize';
+const PAGE_SIZE_KEY = 'hanaptracker.applicationsPageSize';
 const DEFAULT_PAGE_SIZE = 10;
 
 @Injectable({ providedIn: 'root' })

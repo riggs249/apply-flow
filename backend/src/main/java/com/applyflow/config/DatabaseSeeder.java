@@ -75,9 +75,14 @@ public class DatabaseSeeder implements CommandLineRunner {
                 userRepository.save(new User(
                         DEMO_EMAIL,
                         passwordEncoder.encode(DEMO_PASSWORD),
-                        "Alex Morgan"
+                        "Alex Morgan",
+                        true
                 ))
         );
+        if (!user.isEmailVerified()) {
+            user.markEmailVerified();
+            userRepository.save(user);
+        }
 
         if (applicationRepository.countByUserId(user.getId()) > 0) {
             return;
@@ -218,7 +223,7 @@ public class DatabaseSeeder implements CommandLineRunner {
 
     private Company company(String name, String website, String industry, String location, User user) {
         return companyRepository.save(new Company(user, name, website, industry, location,
-                "Demo company used to populate the ApplyFlow preview."));
+                "Demo company used to populate the HanapTracker preview."));
     }
 
     private JobApplication application(User user, Company company, String position,

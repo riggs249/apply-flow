@@ -23,7 +23,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
             <small class="mt-[.2rem] block !text-[.75rem] !text-af-text-faint">{{ user()?.email || 'Email unavailable' }}</small>
           </div>
         </div>
-        <p class="m-0 mt-4 text-[.75rem] text-af-text-faint">Profile editing is not available from the API yet. Display name is derived from your email.</p>
+        <p class="m-0 mt-4 text-[.75rem] text-af-text-faint">Display name comes from your account. Profile editing is not available from the API yet.</p>
       </article>
 
       <article class="panel">

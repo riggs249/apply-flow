@@ -4,6 +4,7 @@ import com.applyflow.common.persistence.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.ColumnDefault;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,13 +25,22 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "display_name", nullable = false, length = 100)
     private String displayName;
 
+    @Column(name = "email_verified", nullable = false)
+    @ColumnDefault("false")
+    private boolean emailVerified = false;
+
     protected User() {
     }
 
     public User(String email, String passwordHash, String displayName) {
+        this(email, passwordHash, displayName, false);
+    }
+
+    public User(String email, String passwordHash, String displayName, boolean emailVerified) {
         this.email = email;
         this.passwordHash = passwordHash;
         this.displayName = displayName;
+        this.emailVerified = emailVerified;
     }
 
     public UUID getId() {
@@ -47,6 +57,18 @@ public class User extends BaseEntity implements UserDetails {
 
     public String getDisplayName() {
         return displayName;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void markEmailVerified() {
+        this.emailVerified = true;
+    }
+
+    public void updateDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 
     @Override

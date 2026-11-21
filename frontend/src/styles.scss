@@ -6,7 +6,7 @@ html {
   @include mat.core();
 }
 
-$applyflow-theme: mat.define-theme((
+$hanaptracker-theme: mat.define-theme((
   color: (
     theme-type: light,
     primary: mat.$cyan-palette,
@@ -68,7 +68,7 @@ body {
   color: var(--af-text);
   font-family: var(--af-font);
   background: var(--af-canvas);
-  @include mat.all-component-themes($applyflow-theme);
+  @include mat.all-component-themes($hanaptracker-theme);
 }
 
 mat-icon {

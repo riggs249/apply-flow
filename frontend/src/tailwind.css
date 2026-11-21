@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
-  Map ApplyFlow design tokens into Tailwind theme utilities
+  Map HanapTracker design tokens into Tailwind theme utilities
   (e.g. bg-af-accent, text-af-text-muted, rounded-af, shadow-af).
 */
 /* Tailwind preflight resets heading weight; keep the browser-default bold headings. */

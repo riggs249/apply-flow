@@ -1,14 +1,14 @@
 import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-login-page',
   standalone: true,
-  imports: [ReactiveFormsModule, MatIconModule],
+  imports: [ReactiveFormsModule, MatIconModule, RouterLink],
   template: `
     <main class="relative flex min-h-screen items-center justify-center overflow-hidden p-6">
       <div
@@ -17,8 +17,8 @@ import { AuthService } from '../../core/auth/auth.service';
       ></div>
       <section class="auth-card relative z-[1] w-full max-w-[400px] rounded-2xl border border-[rgba(255,255,255,.12)] bg-af-surface p-9 shadow-[0_18px_40px_rgba(10,20,24,.28)]">
         <div class="flex items-center gap-[.55rem] text-[1.35rem] font-[750] tracking-[-.04em] text-af-text">
-          <span class="flex size-[2.1rem] items-center justify-center rounded-lg bg-af-accent text-[.95rem] font-bold text-white">A</span>
-          <strong>Apply<span class="text-af-accent">Flow</span></strong>
+          <span class="flex size-[2.1rem] items-center justify-center rounded-lg bg-af-accent text-[.95rem] font-bold text-white">H</span>
+          <strong>Hanap<span class="text-af-accent">Tracker</span></strong>
         </div>
         <div class="mb-7 mt-[2.8rem]">
           <p class="m-0 mb-[.45rem] text-[.72rem] font-bold uppercase tracking-[.1em] text-af-accent">Welcome back</p>
@@ -39,6 +39,10 @@ import { AuthService } from '../../core/auth/auth.service';
             {{ loading ? 'Signing in…' : 'Continue' }} <mat-icon>arrow_forward</mat-icon>
           </button>
         </form>
+        <p class="m-0 mt-5 text-center text-[.78rem] text-af-text-muted">
+          New here?
+          <a class="font-semibold text-af-accent no-underline" routerLink="/register">Create an account</a>
+        </p>
       </section>
     </main>
   `,
@@ -63,7 +67,9 @@ export class LoginPageComponent {
       finalize(() => { this.loading = false; }),
     ).subscribe({
       next: () => void this.router.navigateByUrl('/applications'),
-      error: () => { this.error = 'Unable to sign in. Check your credentials and try again.'; },
+      error: err => {
+        this.error = err?.error?.message || 'Unable to sign in. Check your credentials and try again.';
+      },
     });
   }
 }

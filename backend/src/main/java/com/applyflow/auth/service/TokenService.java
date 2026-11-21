@@ -42,11 +42,12 @@ public class TokenService {
         Instant now = Instant.now();
         Instant expiresAt = now.plus(accessTokenMinutes, ChronoUnit.MINUTES);
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("applyflow")
+                .issuer("hanaptracker")
                 .subject(user.getId().toString())
                 .issuedAt(now)
                 .expiresAt(expiresAt)
                 .claim("email", user.getEmail())
+                .claim("displayName", user.getDisplayName())
                 .build();
         String accessToken = jwtEncoder.encode(JwtEncoderParameters.from(
                 org.springframework.security.oauth2.jwt.JwsHeader.with(MacAlgorithm.HS256).build(),

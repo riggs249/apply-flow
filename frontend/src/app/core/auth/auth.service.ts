@@ -10,6 +10,11 @@ export interface AuthResponse {
   expiresInSeconds: number;
 }
 
+export interface MessageResponse {
+  message: string;
+  email: string;
+}
+
 export interface AuthUser {
   id: string;
   email: string;
@@ -17,8 +22,8 @@ export interface AuthUser {
   initials: string;
 }
 
-const ACCESS_TOKEN_KEY = 'applyflow.accessToken';
-const REFRESH_TOKEN_KEY = 'applyflow.refreshToken';
+const ACCESS_TOKEN_KEY = 'hanaptracker.accessToken';
+const REFRESH_TOKEN_KEY = 'hanaptracker.refreshToken';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -51,6 +56,24 @@ export class AuthService {
     this.currentUserSignal.set(null);
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
+  }
+
+  register(email: string, password: string, displayName: string) {
+    return this.http.post<MessageResponse>(`${environment.apiUrl}/auth/register`, {
+      email,
+      password,
+      displayName,
+    });
+  }
+
+  verifyEmail(token: string) {
+    return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/verify-email`, { token }).pipe(
+      tap(response => this.applySession(response)),
+    );
+  }
+
+  resendVerification(email: string) {
+    return this.http.post<MessageResponse>(`${environment.apiUrl}/auth/resend-verification`, { email });
   }
 
   login(email: string, password: string) {
@@ -127,16 +150,13 @@ export class AuthService {
       const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))) as {
         sub?: string;
         email?: string;
+        displayName?: string;
       };
       const email = payload.email ?? '';
-      const localPart = email.split('@')[0] || 'User';
-      const displayName = localPart
-        .split(/[._-]+/)
-        .filter(Boolean)
-        .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(' ') || 'User';
+      const displayName = (payload.displayName?.trim() || this.displayNameFromEmail(email)).trim() || 'User';
       const initials = displayName
-        .split(' ')
+        .split(/\s+/)
+        .filter(Boolean)
         .map(part => part.charAt(0))
         .join('')
         .slice(0, 2)
@@ -150,5 +170,14 @@ export class AuthService {
     } catch {
       return null;
     }
+  }
+
+  private displayNameFromEmail(email: string): string {
+    const localPart = email.split('@')[0] || 'User';
+    return localPart
+      .split(/[._-]+/)
+      .filter(Boolean)
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
   }
 }

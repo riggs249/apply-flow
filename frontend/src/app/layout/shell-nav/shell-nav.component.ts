@@ -47,8 +47,8 @@ interface NavItem {
           <mat-icon>{{ navOpen() ? 'close' : 'menu' }}</mat-icon>
         </button>
         <a routerLink="/dashboard" class="flex flex-col gap-[.35rem] text-inherit no-underline" (click)="navOpen.set(false)">
-          <span class="text-[.68rem] font-bold uppercase tracking-[.16em] text-[#5eead4]">Job search OS</span>
-          <span class="text-[clamp(1.9rem,3.5vw,2.75rem)] font-extrabold leading-[.95] tracking-[-.06em] text-white max-[760px]:text-[1.7rem]">Apply<span class="text-[#5eead4]">Flow</span></span>
+          <span class="text-[.68rem] font-bold uppercase tracking-[.16em] text-[#5eead4]">HANAP platform</span>
+          <span class="text-[clamp(1.9rem,3.5vw,2.75rem)] font-extrabold leading-[.95] tracking-[-.06em] text-white max-[760px]:text-[1.7rem]">Hanap<span class="text-[#5eead4]">Tracker</span></span>
         </a>
       </div>
 

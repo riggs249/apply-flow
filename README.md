@@ -1,6 +1,6 @@
-# ApplyFlow
+# HanapTracker
 
-ApplyFlow is a full-stack personal job application management platform with a
+HanapTracker (Hiring and Application Navigation and Activity Platform Tracker) is a full-stack personal job application management platform with a
 Spring Boot backend and Angular frontend.
 
 ## Prerequisites
