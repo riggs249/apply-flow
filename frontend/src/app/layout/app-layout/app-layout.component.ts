@@ -7,39 +7,12 @@ import { ShellNavComponent } from '../shell-nav/shell-nav.component';
   standalone: true,
   imports: [RouterOutlet, ShellNavComponent],
   template: `
-    <div class="app-shell">
+    <div class="flex min-h-screen flex-col bg-af-canvas bg-[radial-gradient(ellipse_70%_40%_at_100%_0%,var(--af-canvas-glow),transparent_55%),radial-gradient(ellipse_50%_35%_at_0%_100%,#e2ebe8,transparent_50%)]">
       <app-shell-nav />
-      <div class="workspace">
-        <main class="page-content"><router-outlet /></main>
+      <div class="mx-auto w-[80%] max-w-[1440px] px-[clamp(1rem,3vw,2.5rem)] pb-10 max-[760px]:px-4 max-[760px]:pb-6">
+        <main class="pt-7 max-[760px]:pt-5"><router-outlet /></main>
       </div>
     </div>
   `,
-  styles: [`
-    .app-shell {
-      background:
-        radial-gradient(ellipse 70% 40% at 100% 0%, var(--af-canvas-glow), transparent 55%),
-        radial-gradient(ellipse 50% 35% at 0% 100%, #e2ebe8, transparent 50%),
-        var(--af-canvas);
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-
-    .workspace {
-      margin: 0 auto;
-      max-width: 1440px;
-      padding: 0 clamp(1rem, 3vw, 2.5rem) 2.5rem;
-      width: 75%;
-    }
-
-    .page-content {
-      padding: 1.75rem 0 0;
-    }
-
-    @media (max-width: 760px) {
-      .workspace { padding: 0 1rem 1.5rem; }
-      .page-content { padding-top: 1.25rem; }
-    }
-  `],
 })
 export class AppLayoutComponent {}

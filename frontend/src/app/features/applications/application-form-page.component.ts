@@ -18,23 +18,23 @@ import { CompanyService } from '../companies/company.service';
       <a class="secondary-button" routerLink="/applications"><mat-icon>arrow_back</mat-icon> Back to applications</a>
     </app-page-header>
     @if (error) { <div class="error">{{ error }}</div> }
-    @if (importMessage) { <div class="success">{{ importMessage }}</div> }
-    <form class="form-card" [formGroup]="form" (ngSubmit)="submit()">
+    @if (importMessage) { <div class="mb-4 rounded-af border border-af-accent-muted bg-af-success-soft px-4 py-[.85rem] text-af-success-deep">{{ importMessage }}</div> }
+    <form class="form-card [&_label]:mb-4" [formGroup]="form" (ngSubmit)="submit()">
       <div class="section-title"><h2>Import from job link</h2><p>Paste a posting URL to create or match the company automatically.</p></div>
-      <div class="url-row">
-        <label class="grow">Job posting URL
+      <div class="mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 max-[700px]:grid-cols-[1fr]">
+        <label class="!mb-0">Job posting URL
           <input type="url" formControlName="jobPostingUrl" placeholder="https://boards.greenhouse.io/..." />
         </label>
-        <button class="secondary-button parse-button" type="button" (click)="fillFromJobLink()" [disabled]="parsing">
+        <button class="secondary-button h-11 whitespace-nowrap max-[700px]:w-full" type="button" (click)="fillFromJobLink()" [disabled]="parsing">
           <mat-icon>link</mat-icon>
           {{ parsing ? 'Reading…' : 'Fill from link' }}
         </button>
       </div>
 
       <div class="section-title separated"><h2>Role details</h2><p>Start with the essentials of this opportunity.</p></div>
-      <div class="company-mode">
-        <button type="button" class="mode-chip" [class.active]="companyMode === 'existing'" (click)="setCompanyMode('existing')">Use existing</button>
-        <button type="button" class="mode-chip" [class.active]="companyMode === 'new'" (click)="setCompanyMode('new')">Create new</button>
+      <div class="mb-[.85rem] flex gap-2">
+        <button type="button" [class]="chipClass('existing')" (click)="setCompanyMode('existing')">Use existing</button>
+        <button type="button" [class]="chipClass('new')" (click)="setCompanyMode('new')">Create new</button>
       </div>
       @if (companyMode === 'existing') {
         <label>Company
@@ -52,7 +52,7 @@ import { CompanyService } from '../companies/company.service';
           }
         </label>
       } @else {
-        <div class="fields two">
+        <div class="fields two max-[700px]:!grid-cols-[1fr]">
           <label>Company name
             <input formControlName="newCompanyName" placeholder="e.g. Acme" />
             @if (form.controls.newCompanyName.touched && form.controls.newCompanyName.invalid) {
@@ -66,9 +66,9 @@ import { CompanyService } from '../companies/company.service';
       }
       <label>Position<input formControlName="position" placeholder="e.g. Product Designer" />@if (form.controls.position.touched && form.controls.position.invalid) { <small>Position is required.</small> }</label>
       <label>Job description<textarea rows="4" formControlName="jobDescription" placeholder="What will you be working on?"></textarea></label>
-      <div class="fields three"><label>Employment type<select formControlName="employmentType">@for (item of employmentTypes; track item) { <option [value]="item">{{ label(item) }}</option> }</select></label><label>Work arrangement<select formControlName="workArrangement"><option value="">Not specified</option>@for (item of arrangements; track item) { <option [value]="item">{{ label(item) }}</option> }</select></label><label>Location<input formControlName="location" placeholder="Remote / New York" /></label></div>
+      <div class="fields three max-[700px]:!grid-cols-[1fr]"><label>Employment type<select formControlName="employmentType">@for (item of employmentTypes; track item) { <option [value]="item">{{ label(item) }}</option> }</select></label><label>Work arrangement<select formControlName="workArrangement"><option value="">Not specified</option>@for (item of arrangements; track item) { <option [value]="item">{{ label(item) }}</option> }</select></label><label>Location<input formControlName="location" placeholder="Remote / New York" /></label></div>
       <div class="section-title separated"><h2>Application details</h2><p>Keep the information you will want at a glance.</p></div>
-      <div class="fields three">
+      <div class="fields three max-[700px]:!grid-cols-[1fr]">
         <label>Application date<input type="date" formControlName="applicationDate" /></label>
         <label>Current status<select formControlName="status">@for (item of statuses; track item) { <option [value]="item">{{ label(item) }}</option> }</select></label>
         <label>Salary expectation<input type="number" min="0" formControlName="salaryExpectation" placeholder="Optional" /></label>
@@ -96,61 +96,9 @@ import { CompanyService } from '../companies/company.service';
         }
       </label>
       <label>Personal notes<textarea rows="4" formControlName="personalNotes" placeholder="Your notes, next steps, or context"></textarea></label>
-      <div class="actions"><a class="secondary-button" routerLink="/applications">Cancel</a><button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Saving…' : (editing ? 'Save changes' : 'Add application') }}</button></div>
+      <div class="mt-2 flex justify-end gap-[.65rem] border-t border-af-divider pt-5"><a class="secondary-button" routerLink="/applications">Cancel</a><button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Saving…' : (editing ? 'Save changes' : 'Add application') }}</button></div>
     </form>
   `,
-  styles: [`
-    .form-card label { margin-bottom: 1rem; }
-    .fields.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .url-row {
-      align-items: end;
-      display: grid;
-      gap: .75rem;
-      grid-template-columns: minmax(0, 1fr) auto;
-      margin-bottom: 1rem;
-    }
-    .url-row .grow { margin-bottom: 0; }
-    .parse-button { height: 2.75rem; white-space: nowrap; }
-    .company-mode {
-      display: flex;
-      gap: .5rem;
-      margin-bottom: .85rem;
-    }
-    .mode-chip {
-      background: transparent;
-      border: 1px solid var(--af-divider);
-      border-radius: 999px;
-      color: var(--af-text-muted);
-      cursor: pointer;
-      font: inherit;
-      padding: .35rem .85rem;
-    }
-    .mode-chip.active {
-      background: var(--af-accent-soft);
-      border-color: var(--af-accent);
-      color: var(--af-text);
-    }
-    .success {
-      background: var(--af-success-soft);
-      border: 1px solid var(--af-accent-muted);
-      border-radius: var(--af-radius);
-      color: var(--af-success-deep);
-      margin-bottom: 1rem;
-      padding: .85rem 1rem;
-    }
-    .actions {
-      border-top: 1px solid var(--af-divider);
-      display: flex;
-      gap: .65rem;
-      justify-content: flex-end;
-      margin-top: .5rem;
-      padding-top: 1.25rem;
-    }
-    @media (max-width: 700px) {
-      .fields.two, .fields.three, .url-row { grid-template-columns: 1fr; }
-      .parse-button { width: 100%; }
-    }
-  `],
 })
 export class ApplicationFormPageComponent implements OnInit {
   private readonly service = inject(ApplicationService);
@@ -236,6 +184,13 @@ export class ApplicationFormPageComponent implements OnInit {
         error: () => this.error = 'Application could not be loaded.',
       });
     }
+  }
+
+  chipClass(mode: 'existing' | 'new'): string {
+    const base = 'cursor-pointer rounded-full border px-[.85rem] py-[.35rem]';
+    return this.companyMode === mode
+      ? `${base} border-af-accent bg-af-accent-soft text-af-text`
+      : `${base} border-af-divider bg-transparent text-af-text-muted`;
   }
 
   setCompanyMode(mode: 'existing' | 'new'): void {

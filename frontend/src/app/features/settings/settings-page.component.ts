@@ -13,23 +13,23 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
   template: `
     <app-page-header title="Settings" description="Manage your profile and application preferences." />
 
-    <section class="settings-grid">
+    <section class="grid grid-cols-2 gap-4 max-[800px]:grid-cols-[1fr]">
       <article class="panel">
-        <div class="panel-heading"><h2>Profile</h2><p>Signed-in account details from your session.</p></div>
-        <div class="profile-row">
-          <span class="avatar">{{ user()?.initials || 'U' }}</span>
+        <div class="panel-heading mb-[1.1rem]"><h2>Profile</h2><p>Signed-in account details from your session.</p></div>
+        <div class="flex items-center gap-[.8rem]">
+          <span class="flex size-10 items-center justify-center rounded-full bg-af-accent-soft text-[.75rem] font-bold text-af-accent">{{ user()?.initials || 'U' }}</span>
           <div>
-            <strong>{{ user()?.displayName || 'Signed in' }}</strong>
-            <small>{{ user()?.email || 'Email unavailable' }}</small>
+            <strong class="block text-[.9rem] text-af-text">{{ user()?.displayName || 'Signed in' }}</strong>
+            <small class="mt-[.2rem] block !text-[.75rem] !text-af-text-faint">{{ user()?.email || 'Email unavailable' }}</small>
           </div>
         </div>
-        <p class="hint">Profile editing is not available from the API yet. Display name is derived from your email.</p>
+        <p class="m-0 mt-4 text-[.75rem] text-af-text-faint">Profile editing is not available from the API yet. Display name is derived from your email.</p>
       </article>
 
       <article class="panel">
-        <div class="panel-heading"><h2>Preferences</h2><p>These settings stay on this device.</p></div>
+        <div class="panel-heading mb-[1.1rem]"><h2>Preferences</h2><p>These settings stay on this device.</p></div>
         <form [formGroup]="form" (ngSubmit)="savePreferences()">
-          <label for="pageSize">Applications page size
+          <label class="mb-4" for="pageSize">Applications page size
             <select id="pageSize" formControlName="pageSize">
               <option [ngValue]="10">10 per page</option>
               <option [ngValue]="20">20 per page</option>
@@ -40,50 +40,17 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
         </form>
       </article>
 
-      <article class="panel">
-        <div class="panel-heading"><h2>Workspace</h2><p>Quick links and session controls.</p></div>
-        <div class="actions">
+      <article class="panel col-span-full max-[800px]:col-auto">
+        <div class="panel-heading mb-[1.1rem]"><h2>Workspace</h2><p>Quick links and session controls.</p></div>
+        <div class="flex flex-wrap gap-[.7rem]">
           <a class="secondary-button" routerLink="/companies"><mat-icon>business</mat-icon> Manage companies</a>
           <button class="danger-button" type="button" (click)="logout()" [disabled]="loggingOut">
-            <mat-icon>logout</mat-icon> {{ loggingOut ? 'Signing out…' : 'Sign out' }}
+            <mat-icon class="!size-[18px] !text-[18px]">logout</mat-icon> {{ loggingOut ? 'Signing out…' : 'Sign out' }}
           </button>
         </div>
       </article>
     </section>
   `,
-  styles: [`
-    .settings-grid {
-      display: grid;
-      gap: 1rem;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .panel:last-child { grid-column: 1 / -1; }
-    .panel-heading { margin-bottom: 1.1rem; }
-    .profile-row { align-items: center; display: flex; gap: .8rem; }
-    .avatar {
-      align-items: center;
-      background: var(--af-accent-soft);
-      border-radius: 50%;
-      color: var(--af-accent);
-      display: flex;
-      font-size: .75rem;
-      font-weight: 700;
-      height: 2.5rem;
-      justify-content: center;
-      width: 2.5rem;
-    }
-    .profile-row strong, .profile-row small { display: block; }
-    .profile-row strong { color: var(--af-text); font-size: .9rem; }
-    .profile-row small { color: var(--af-text-faint); font-size: .75rem; margin-top: .2rem; }
-    .hint { color: var(--af-text-faint); font-size: .75rem; margin: 1rem 0 0; }
-    label { margin-bottom: 1rem; }
-    .actions { display: flex; flex-wrap: wrap; gap: .7rem; }
-    .actions mat-icon { font-size: 18px; height: 18px; width: 18px; }
-    @media (max-width: 800px) {
-      .settings-grid { grid-template-columns: 1fr; }
-      .panel:last-child { grid-column: auto; }
-    }
-  `],
 })
 export class SettingsPageComponent {
   private readonly auth = inject(AuthService);

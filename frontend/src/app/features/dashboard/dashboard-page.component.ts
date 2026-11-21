@@ -31,7 +31,7 @@ import { AnalyticsResponse } from './analytics.models';
       <a class="primary-button" routerLink="/applications/new"><mat-icon>add</mat-icon> Add application</a>
     </app-page-header>
 
-    <form class="range-filter" [formGroup]="range">
+    <form class="range-filter max-[600px]:!items-stretch" [formGroup]="range">
       <app-date-picker placeholder="From" formControlName="from" />
       <app-date-picker placeholder="To" formControlName="to" />
       <button type="button" class="filter-button" (click)="load()">Apply range</button>
@@ -41,7 +41,7 @@ import { AnalyticsResponse } from './analytics.models';
     @if (error) { <div class="error">{{ error }}</div> }
     @if (loading) { <div class="state">Loading analytics…</div> }
     @else if (analytics) {
-      <section class="stats-grid" aria-label="Application statistics">
+      <section class="mb-5 grid grid-cols-[repeat(4,1fr)] gap-[.8rem] max-[1000px]:grid-cols-[repeat(2,1fr)] max-[600px]:grid-cols-[1fr]" aria-label="Application statistics">
         <app-stat-card label="Total applications" [value]="analytics.metrics.totalApplications.toString()" trend="In selected range" icon="work_outline" [positive]="true" />
         <app-stat-card label="Active applications" [value]="analytics.metrics.activeApplications.toString()" trend="Not hired, rejected, or withdrawn" icon="pending_actions" [positive]="true" />
         <app-stat-card label="Interviews scheduled" [value]="analytics.metrics.interviewsScheduled.toString()" trend="In selected range" icon="event" [positive]="true" />
@@ -53,125 +53,60 @@ import { AnalyticsResponse } from './analytics.models';
       </section>
 
       @if (hasNoData) {
-        <section class="empty-state"><mat-icon>analytics</mat-icon><h2>No application data found</h2><p>Try another date range or add your first job application.</p><a class="primary-button" routerLink="/applications/new">Add application</a></section>
+        <section class="flex flex-col items-center rounded-af-lg border border-af-border bg-af-surface p-12 text-center shadow-af">
+          <mat-icon class="!size-[38px] !text-[38px] text-af-accent">analytics</mat-icon>
+          <h2 class="mx-0 mb-1 mt-[.7rem] text-[1.05rem]">No application data found</h2>
+          <p class="m-0 mb-4 text-af-text-faint">Try another date range or add your first job application.</p>
+          <a class="primary-button" routerLink="/applications/new">Add application</a>
+        </section>
       } @else {
-        <section class="chart-grid">
-          <article class="panel wide">
+        <section class="grid grid-cols-2 gap-4 max-[1000px]:grid-cols-[1fr]">
+          <article class="panel col-span-2 max-[1000px]:col-auto">
             <div class="panel-heading"><div><h2>Applications submitted per month</h2><p>Monthly application volume</p></div></div>
-            <div class="chart"><canvas baseChart [type]="'line'" [data]="monthlyChart" [options]="lineOptions"></canvas></div>
+            <div class="mt-4 h-[280px]"><canvas baseChart [type]="'line'" [data]="monthlyChart" [options]="lineOptions"></canvas></div>
           </article>
 
           <article class="panel">
             <div class="panel-heading"><div><h2>Recruitment stages</h2><p>Current application pipeline</p></div></div>
-            <div class="chart"><canvas baseChart [type]="'doughnut'" [data]="stageChart" [options]="doughnutOptions"></canvas></div>
+            <div class="mt-4 h-[280px]"><canvas baseChart [type]="'doughnut'" [data]="stageChart" [options]="doughnutOptions"></canvas></div>
           </article>
 
           <article class="panel">
             <div class="panel-heading"><div><h2>Application outcomes</h2><p>Terminal and active statuses</p></div></div>
-            <div class="chart"><canvas baseChart [type]="'doughnut'" [data]="outcomeChart" [options]="doughnutOptions"></canvas></div>
+            <div class="mt-4 h-[280px]"><canvas baseChart [type]="'doughnut'" [data]="outcomeChart" [options]="doughnutOptions"></canvas></div>
           </article>
 
-          <article class="panel wide">
+          <article class="panel col-span-2 max-[1000px]:col-auto">
             <div class="panel-heading"><div><h2>Interview conversion trends</h2><p>Applications and interviews by month</p></div></div>
-            <div class="chart"><canvas baseChart [type]="'bar'" [data]="conversionChart" [options]="barOptions"></canvas></div>
+            <div class="mt-4 h-[280px]"><canvas baseChart [type]="'bar'" [data]="conversionChart" [options]="barOptions"></canvas></div>
           </article>
 
           <article class="panel">
             <div class="panel-heading"><div><h2>Applications by employment type</h2><p>Full-time, contract, and other types</p></div></div>
-            <div class="chart"><canvas baseChart [type]="'doughnut'" [data]="employmentChart" [options]="doughnutOptions"></canvas></div>
+            <div class="mt-4 h-[280px]"><canvas baseChart [type]="'doughnut'" [data]="employmentChart" [options]="doughnutOptions"></canvas></div>
           </article>
         </section>
       }
     }
 
-    <section class="notifications-panel">
+    <section class="notifications-panel mt-4">
       <div class="panel-heading"><div><h2>Upcoming and overdue reminders</h2><p>Notifications that need attention</p></div><a class="text-button" routerLink="/reminders">View all</a></div>
-      @if (!notifications.length) { <p class="empty-notifications">No upcoming or overdue reminders.</p> }
+      @if (!notifications.length) { <p class="m-0 mt-[1.2rem] border-t border-af-divider pt-[1.1rem] text-[.78rem] text-af-text-faint">No upcoming or overdue reminders.</p> }
       @for (item of notifications.slice(0, 4); track item.id) {
-        <div class="upcoming-item"><span class="date-badge" [class.muted]="item.timingState === 'OVERDUE'"><strong>{{ item.remindAt | date:'d' }}</strong><small>{{ item.remindAt | date:'MMM' }}</small></span><div><strong>{{ item.title }}</strong><span>{{ item.companyName ? item.companyName + ' · ' + item.applicationPosition : item.reminderType }}</span></div><mat-icon>chevron_right</mat-icon></div>
+        <div class="mt-4 flex items-center gap-[.8rem] border-t border-af-divider pt-4">
+          <span
+            class="flex flex-none flex-col items-center rounded-af-sm px-[.65rem] py-[.45rem]"
+            [class.bg-af-accent-soft]="item.timingState !== 'OVERDUE'"
+            [class.text-af-accent]="item.timingState !== 'OVERDUE'"
+            [class.bg-af-border-soft]="item.timingState === 'OVERDUE'"
+            [class.text-af-text-muted]="item.timingState === 'OVERDUE'"
+          ><strong class="text-[.95rem] text-af-text">{{ item.remindAt | date:'d' }}</strong><small class="text-[.55rem] text-inherit">{{ item.remindAt | date:'MMM' }}</small></span>
+          <div class="flex flex-1 flex-col"><strong class="text-[.82rem] text-af-text">{{ item.title }}</strong><span class="text-[.72rem] text-af-text-faint">{{ item.companyName ? item.companyName + ' · ' + item.applicationPosition : item.reminderType }}</span></div>
+          <mat-icon class="!text-[19px] text-af-text-faint">chevron_right</mat-icon>
+        </div>
       }
     </section>
   `,
-  styles: [`
-    .stats-grid {
-      display: grid;
-      gap: .8rem;
-      grid-template-columns: repeat(4, 1fr);
-      margin-bottom: 1.25rem;
-    }
-    .chart-grid {
-      display: grid;
-      gap: 1rem;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .panel.wide { grid-column: span 2; }
-    .chart { height: 280px; margin-top: 1rem; }
-    .empty-state {
-      align-items: center;
-      background: var(--af-surface);
-      border: 1px solid var(--af-border);
-      border-radius: var(--af-radius-lg);
-      box-shadow: var(--af-shadow);
-      display: flex;
-      flex-direction: column;
-      padding: 3rem;
-      text-align: center;
-    }
-    .empty-state mat-icon {
-      color: var(--af-accent);
-      font-size: 38px;
-      height: 38px;
-      width: 38px;
-    }
-    .empty-state h2 { font-size: 1.05rem; margin: .7rem 0 .25rem; }
-    .empty-state p { color: var(--af-text-faint); margin: 0 0 1rem; }
-    .notifications-panel { margin-top: 1rem; }
-    .empty-notifications {
-      border-top: 1px solid var(--af-divider);
-      color: var(--af-text-faint);
-      font-size: .78rem;
-      margin: 1.2rem 0 0;
-      padding-top: 1.1rem;
-    }
-    .upcoming-item {
-      align-items: center;
-      border-top: 1px solid var(--af-divider);
-      display: flex;
-      gap: .8rem;
-      margin-top: 1rem;
-      padding-top: 1rem;
-    }
-    .upcoming-item > div { display: flex; flex: 1; flex-direction: column; }
-    .upcoming-item strong { color: var(--af-text); font-size: .82rem; }
-    .upcoming-item span { color: var(--af-text-faint); font-size: .72rem; }
-    .upcoming-item mat-icon { color: var(--af-text-faint); font-size: 19px; }
-    .date-badge {
-      align-items: center !important;
-      background: var(--af-accent-soft);
-      border-radius: var(--af-radius-sm);
-      color: var(--af-accent) !important;
-      display: flex !important;
-      flex: 0 0 auto !important;
-      flex-direction: column;
-      padding: .45rem .65rem;
-    }
-    .date-badge.muted {
-      background: var(--af-border-soft);
-      color: var(--af-text-muted) !important;
-    }
-    .date-badge strong { font-size: .95rem; }
-    .date-badge small { color: inherit !important; font-size: .55rem; }
-    @media (max-width: 1000px) {
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-      .chart-grid { grid-template-columns: 1fr; }
-      .panel.wide { grid-column: auto; }
-    }
-    @media (max-width: 600px) {
-      .stats-grid { grid-template-columns: 1fr; }
-      .range-filter { align-items: stretch; flex-wrap: wrap; }
-      .range-filter label { flex: 1 1 130px; }
-    }
-  `],
 })
 export class DashboardPageComponent implements OnInit {
   private readonly analyticsService = inject(AnalyticsService);

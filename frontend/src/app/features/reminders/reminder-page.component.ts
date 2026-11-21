@@ -18,8 +18,8 @@ import { ReminderService } from './reminder.service';
     </app-page-header>
     @if (error) { <div class="error">{{ error }}</div> }
     @if (showForm) {
-      <form class="form-card" [formGroup]="form" (ngSubmit)="submit()">
-        <h2>{{ editingId ? 'Edit reminder' : 'Add reminder' }}</h2>
+      <form class="form-card mb-5 [&_label]:mb-4" [formGroup]="form" (ngSubmit)="submit()">
+        <h2 class="!mb-5">{{ editingId ? 'Edit reminder' : 'Add reminder' }}</h2>
         <div class="fields two">
           <label>Title<input formControlName="title" placeholder="Follow up with recruiter" /></label>
           <label>Remind at<input type="datetime-local" formControlName="remindAt" /></label>
@@ -29,21 +29,21 @@ import { ReminderService } from './reminder.service';
           <label>Application (optional)<select formControlName="applicationId"><option value="">No application</option>@for (item of applications; track item.id) { <option [value]="item.id">{{ item.companyName }} — {{ item.position }}</option> }</select></label>
         </div>
         <label>Description<textarea rows="3" formControlName="description"></textarea></label>
-        <div class="actions"><button class="secondary-button" type="button" (click)="closeForm()">Cancel</button><button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Saving…' : 'Save reminder' }}</button></div>
+        <div class="flex justify-end gap-[.65rem] border-t border-af-divider pt-4"><button class="secondary-button" type="button" (click)="closeForm()">Cancel</button><button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Saving…' : 'Save reminder' }}</button></div>
       </form>
     }
     @if (loading) { <div class="state">Loading reminders…</div> } @else {
       @for (group of groups; track group.key) {
         @if (group.items.length) {
-          <section class="group"><div class="group-heading"><h2>{{ group.title }}</h2><span>{{ group.items.length }}</span></div>
-            <div class="reminder-grid">@for (item of group.items; track item.id) {
-              <article class="card" [class.completed]="item.timingState === 'COMPLETED'" [class.overdue]="item.timingState === 'OVERDUE'">
-                <div class="card-head"><span class="type">{{ label(item.reminderType) }}</span><span class="timing">{{ label(item.timingState) }}</span></div>
-                <strong>{{ item.title }}</strong>
-                @if (item.companyName) { <small>{{ item.companyName }} · {{ item.applicationPosition }}</small> }
-                @if (item.description) { <p>{{ item.description }}</p> }
-                <time><mat-icon>schedule</mat-icon>{{ item.remindAt | date:'MMM d, y, h:mm a' }}</time>
-                <footer>
+          <section class="mb-5"><div class="mx-0 mb-[.65rem] mt-2 flex items-center gap-2"><h2 class="m-0 text-[.88rem] text-af-text-secondary">{{ group.title }}</h2><span class="rounded-md bg-af-border-soft px-[.45rem] py-[.2rem] text-[.68rem] text-af-text-muted">{{ group.items.length }}</span></div>
+            <div class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-[.8rem]">@for (item of group.items; track item.id) {
+              <article class="rounded-af-lg border border-af-border bg-af-surface p-4 shadow-af" [class]="cardClass(item)">
+                <div class="mb-[.65rem] flex justify-between"><span class="text-[.65rem] font-bold text-af-accent">{{ label(item.reminderType) }}</span><span class="text-[.65rem] font-bold" [class]="item.timingState === 'OVERDUE' ? 'text-af-danger' : 'text-af-text-muted'">{{ label(item.timingState) }}</span></div>
+                <strong class="block text-[.86rem] text-af-text">{{ item.title }}</strong>
+                @if (item.companyName) { <small class="mt-1 block text-[.72rem] text-af-text-faint">{{ item.companyName }} · {{ item.applicationPosition }}</small> }
+                @if (item.description) { <p class="text-[.75rem] leading-[1.5] text-af-text-muted">{{ item.description }}</p> }
+                <time class="flex items-center gap-[.35rem] text-[.72rem] text-af-text-muted"><mat-icon class="!size-[17px] !text-[17px]">schedule</mat-icon>{{ item.remindAt | date:'MMM d, y, h:mm a' }}</time>
+                <footer class="mt-[.8rem] flex justify-end gap-[.7rem] border-t border-af-divider pt-[.7rem]">
                   @if (item.timingState === 'COMPLETED') { <button class="text-button" type="button" (click)="reopen(item)">Reopen</button> }
                   @else { <button class="text-button" type="button" (click)="complete(item)">Complete</button> }
                   <button class="text-button" type="button" (click)="edit(item)">Edit</button>
@@ -56,63 +56,6 @@ import { ReminderService } from './reminder.service';
       }
     }
   `,
-  styles: [`
-    .form-card { margin-bottom: 1.25rem; }
-    .form-card h2 { margin: 0 0 1.25rem; }
-    .form-card label { margin-bottom: 1rem; }
-    .actions {
-      border-top: 1px solid var(--af-divider);
-      display: flex;
-      gap: .65rem;
-      justify-content: flex-end;
-      padding-top: 1rem;
-    }
-    .group { margin-bottom: 1.25rem; }
-    .group-heading { align-items: center; display: flex; gap: .5rem; margin: .5rem 0 .65rem; }
-    .group-heading h2 { color: var(--af-text-secondary); font-size: .88rem; margin: 0; }
-    .group-heading span {
-      background: var(--af-border-soft);
-      border-radius: 6px;
-      color: var(--af-text-muted);
-      font-size: .68rem;
-      padding: .2rem .45rem;
-    }
-    .reminder-grid { display: grid; gap: .8rem; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
-    .card {
-      background: var(--af-surface);
-      border: 1px solid var(--af-border);
-      border-radius: var(--af-radius-lg);
-      box-shadow: var(--af-shadow);
-      padding: 1rem;
-    }
-    .card.overdue { border-left: 3px solid var(--af-danger); }
-    .card.completed { opacity: .72; }
-    .card-head { display: flex; justify-content: space-between; margin-bottom: .65rem; }
-    .type, .timing { font-size: .65rem; font-weight: 700; }
-    .type { color: var(--af-accent); }
-    .timing { color: var(--af-text-muted); }
-    .overdue .timing { color: var(--af-danger); }
-    .card > strong, .card > small { display: block; }
-    .card > strong { color: var(--af-text); font-size: .86rem; }
-    .card > small { color: var(--af-text-faint); font-size: .72rem; margin-top: .25rem; }
-    .card p { color: var(--af-text-muted); font-size: .75rem; line-height: 1.5; }
-    .card time {
-      align-items: center;
-      color: var(--af-text-muted);
-      display: flex;
-      font-size: .72rem;
-      gap: .35rem;
-    }
-    .card time mat-icon { font-size: 17px; height: 17px; width: 17px; }
-    .card footer {
-      border-top: 1px solid var(--af-divider);
-      display: flex;
-      gap: .7rem;
-      justify-content: flex-end;
-      margin-top: .8rem;
-      padding-top: .7rem;
-    }
-  `],
 })
 export class ReminderPageComponent implements OnInit {
   private readonly reminderApi = inject(ReminderService);
@@ -154,6 +97,12 @@ export class ReminderPageComponent implements OnInit {
       },
       error: () => { this.error = 'Reminders could not be loaded.'; this.loading = false; },
     });
+  }
+
+  cardClass(item: ReminderRecord): string {
+    if (item.timingState === 'OVERDUE') return 'border-l-[3px] border-l-af-danger';
+    if (item.timingState === 'COMPLETED') return 'opacity-[.72]';
+    return '';
   }
 
   openCreate(): void {

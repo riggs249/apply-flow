@@ -24,8 +24,8 @@ import { CompanyService } from './company.service';
     @if (error) { <div class="error">{{ error }}</div> }
 
     @if (showForm) {
-      <form class="form-card" [formGroup]="form" (ngSubmit)="submit()">
-        <h2>{{ editingId ? 'Edit company' : 'Add company' }}</h2>
+      <form class="form-card mb-5 [&_label]:mb-4" [formGroup]="form" (ngSubmit)="submit()">
+        <h2 class="!mb-5">{{ editingId ? 'Edit company' : 'Add company' }}</h2>
         <div class="fields two">
           <label>Name<input formControlName="name" placeholder="Acme Corp" />@if (form.controls.name.touched && form.controls.name.invalid) { <small>Name is required.</small> }</label>
           <label>Website<input type="url" formControlName="website" placeholder="https://..." /></label>
@@ -35,7 +35,7 @@ import { CompanyService } from './company.service';
           <label>Location<input formControlName="location" placeholder="Remote / New York" /></label>
         </div>
         <label>Notes<textarea rows="3" formControlName="notes" placeholder="Culture notes, contacts, or research"></textarea></label>
-        <div class="actions">
+        <div class="flex justify-end gap-[.65rem] border-t border-af-divider pt-4">
           <button class="secondary-button" type="button" (click)="closeForm()">Cancel</button>
           <button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Saving…' : 'Save company' }}</button>
         </div>
@@ -54,7 +54,7 @@ import { CompanyService } from './company.service';
             <tbody>
               @for (company of companies; track company.id) {
                 <tr>
-                  <td><strong>{{ company.name }}</strong>@if (company.notes) { <small>{{ company.notes }}</small> }</td>
+                  <td><strong>{{ company.name }}</strong>@if (company.notes) { <small class="max-w-[28rem] truncate">{{ company.notes }}</small> }</td>
                   <td>{{ company.industry || '—' }}</td>
                   <td>{{ company.location || '—' }}</td>
                   <td>@if (company.website) { <a [href]="company.website" target="_blank" rel="noopener noreferrer">Visit</a> } @else { — }</td>
@@ -78,24 +78,6 @@ import { CompanyService } from './company.service';
       </section>
     }
   `,
-  styles: [`
-    .form-card { margin-bottom: 1.25rem; }
-    .form-card h2 { margin: 0 0 1.25rem; }
-    .form-card label { margin-bottom: 1rem; }
-    .actions {
-      border-top: 1px solid var(--af-divider);
-      display: flex;
-      gap: .65rem;
-      justify-content: flex-end;
-      padding-top: 1rem;
-    }
-    td small {
-      max-width: 28rem;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-  `],
 })
 export class CompanyPageComponent implements OnInit {
   private readonly service = inject(CompanyService);

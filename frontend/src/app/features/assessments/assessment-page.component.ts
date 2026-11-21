@@ -18,8 +18,8 @@ import { AssessmentService } from './assessment.service';
     </app-page-header>
     @if (error) { <div class="error">{{ error }}</div> }
     @if (showForm) {
-      <form class="form-card" [formGroup]="form" (ngSubmit)="submit()">
-        <h2>{{ editingId ? 'Edit assessment' : 'Add assessment' }}</h2>
+      <form class="form-card mb-4 [&_label]:mb-4" [formGroup]="form" (ngSubmit)="submit()">
+        <h2 class="!mb-5">{{ editingId ? 'Edit assessment' : 'Add assessment' }}</h2>
         <div class="fields two">
           <label>Application<select formControlName="applicationId"><option value="">Select application</option>@for (item of applications; track item.id) { <option [value]="item.id">{{ item.companyName }} — {{ item.position }}</option> }</select></label>
           <label>Title<input formControlName="title" placeholder="Take-home coding project" /></label>
@@ -31,73 +31,23 @@ import { AssessmentService } from './assessment.service';
         </div>
         <label>Instructions<textarea rows="5" formControlName="instructions"></textarea></label>
         <div class="fields two"><label>Result<textarea rows="4" formControlName="result"></textarea></label><label>Notes<textarea rows="4" formControlName="notes"></textarea></label></div>
-        <div class="actions"><button class="secondary-button" type="button" (click)="closeForm()">Cancel</button><button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Saving…' : 'Save assessment' }}</button></div>
+        <div class="flex justify-end gap-[.65rem] border-t border-af-divider pt-4"><button class="secondary-button" type="button" (click)="closeForm()">Cancel</button><button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Saving…' : 'Save assessment' }}</button></div>
       </form>
     }
     @if (loading) { <div class="state">Loading assessments…</div> } @else if (!assessments.length) { <div class="empty"><mat-icon>assignment</mat-icon><h2>No assessments recorded</h2><p>Add a technical test or coding examination.</p></div> } @else {
-      <section class="cards">
+      <section class="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-[.8rem]">
         @for (item of assessments; track item.id) {
-          <article class="card"><header><div><span class="type">{{ item.assessmentType }}</span><strong>{{ item.title }}</strong><small>{{ item.companyName }} · {{ item.position }}</small></div><span class="status" [class]="item.status.toLowerCase()">{{ label(item.status) }}</span></header>
-            @if (item.dueAt) { <div class="deadline"><mat-icon>event</mat-icon><span>Due {{ item.dueAt | date:'MMM d, y, h:mm a' }}</span></div> }
-            @if (item.completedAt) { <p class="completed">Completed {{ item.completedAt | date:'MMM d, y, h:mm a' }}</p> }
-            @if (item.instructions) { <p class="detail">{{ item.instructions }}</p> }
-            @if (item.result) { <p class="result"><strong>Result</strong>{{ item.result }}</p> }
-            <footer><button class="text-button" type="button" (click)="edit(item)">Edit</button><button class="danger-text" type="button" (click)="deleteAssessment(item)">Delete</button></footer>
+          <article class="rounded-af-lg border border-af-border bg-af-surface p-4 shadow-af"><header class="flex items-start justify-between"><div><span class="block text-[.68rem] font-bold uppercase text-af-accent">{{ item.assessmentType }}</span><strong class="mt-[.45rem] block text-[.86rem] text-af-text">{{ item.title }}</strong><small class="mt-[.2rem] block text-[.72rem] text-af-text-faint">{{ item.companyName }} · {{ item.position }}</small></div><span class="block rounded-af-sm px-[.55rem] py-[.35rem] text-[.65rem] font-bold" [class]="statusClass(item.status)">{{ label(item.status) }}</span></header>
+            @if (item.dueAt) { <div class="mt-[.8rem] flex items-center gap-[.4rem] border-t border-af-divider pt-[.8rem] text-[.75rem] text-af-text-muted"><mat-icon class="!size-[17px] !text-[17px]">event</mat-icon><span>Due {{ item.dueAt | date:'MMM d, y, h:mm a' }}</span></div> }
+            @if (item.completedAt) { <p class="bg-af-success-soft text-af-success-deep">Completed {{ item.completedAt | date:'MMM d, y, h:mm a' }}</p> }
+            @if (item.instructions) { <p class="max-h-[4.5em] overflow-hidden text-[.75rem] leading-[1.5] text-af-text-muted">{{ item.instructions }}</p> }
+            @if (item.result) { <p class="text-[.75rem] text-af-text-muted"><strong class="mb-[.2rem] block text-af-text-secondary">Result</strong>{{ item.result }}</p> }
+            <footer class="mt-[.8rem] flex justify-end gap-[.7rem] border-t border-af-divider pt-[.7rem]"><button class="text-button" type="button" (click)="edit(item)">Edit</button><button class="danger-text" type="button" (click)="deleteAssessment(item)">Delete</button></footer>
           </article>
         }
       </section>
     }
   `,
-  styles: [`
-    .form-card { margin-bottom: 1rem; }
-    .form-card h2 { margin: 0 0 1.25rem; }
-    .form-card label { margin-bottom: 1rem; }
-    .actions {
-      border-top: 1px solid var(--af-divider);
-      display: flex;
-      gap: .65rem;
-      justify-content: flex-end;
-      padding-top: 1rem;
-    }
-    .cards { display: grid; gap: .8rem; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
-    .card {
-      background: var(--af-surface);
-      border: 1px solid var(--af-border);
-      border-radius: var(--af-radius-lg);
-      box-shadow: var(--af-shadow);
-      padding: 1rem;
-    }
-    .card header { align-items: flex-start; display: flex; justify-content: space-between; }
-    .card header strong, .card header small, .card header span { display: block; }
-    .card header strong { color: var(--af-text); font-size: .86rem; margin-top: .45rem; }
-    .card header small { color: var(--af-text-faint); font-size: .72rem; margin-top: .2rem; }
-    .type { color: var(--af-accent); font-size: .68rem; font-weight: 700; text-transform: uppercase; }
-    .status { border-radius: var(--af-radius-sm); font-size: .65rem; font-weight: 700; padding: .35rem .55rem; }
-    .not_started { background: var(--af-slate-soft); color: var(--af-slate); }
-    .in_progress { background: var(--af-amber-soft); color: var(--af-amber); }
-    .completed { background: var(--af-success-soft); color: var(--af-success-deep); }
-    .expired { background: var(--af-danger-soft); color: var(--af-danger); }
-    .deadline, .result { color: var(--af-text-muted); font-size: .75rem; }
-    .deadline {
-      align-items: center;
-      border-top: 1px solid var(--af-divider);
-      display: flex;
-      gap: .4rem;
-      margin-top: .8rem;
-      padding-top: .8rem;
-    }
-    .deadline mat-icon { font-size: 17px; height: 17px; width: 17px; }
-    .detail { color: var(--af-text-muted); font-size: .75rem; line-height: 1.5; max-height: 4.5em; overflow: hidden; }
-    .result strong { color: var(--af-text-secondary); display: block; margin-bottom: .2rem; }
-    .card footer {
-      border-top: 1px solid var(--af-divider);
-      display: flex;
-      gap: .7rem;
-      justify-content: flex-end;
-      margin-top: .8rem;
-      padding-top: .7rem;
-    }
-  `],
 })
 export class AssessmentPageComponent implements OnInit {
   private readonly assessmentsApi = inject(AssessmentService);
@@ -130,6 +80,15 @@ export class AssessmentPageComponent implements OnInit {
       next: items => { this.assessments = items; this.loading = false; },
       error: () => { this.error = 'Assessments could not be loaded.'; this.loading = false; },
     });
+  }
+
+  statusClass(status: AssessmentStatus): string {
+    switch (status) {
+      case 'IN_PROGRESS': return 'bg-af-amber-soft text-af-amber';
+      case 'COMPLETED': return 'bg-af-success-soft text-af-success-deep';
+      case 'EXPIRED': return 'bg-af-danger-soft text-af-danger';
+      default: return 'bg-af-slate-soft text-af-slate';
+    }
   }
 
   openCreate(): void {

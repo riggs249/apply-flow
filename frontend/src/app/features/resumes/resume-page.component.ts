@@ -35,7 +35,7 @@ import { ResumeService } from './resume.service';
         <label>Short description
           <textarea rows="3" formControlName="description" placeholder="What this version emphasizes"></textarea>
         </label>
-        <div class="actions">
+        <div class="mt-2 flex justify-end gap-[.65rem] border-t border-af-divider pt-5">
           <button class="secondary-button" type="button" (click)="closeForm()">Cancel</button>
           <button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Saving…' : (editingId ? 'Save details' : 'Upload') }}</button>
         </div>
@@ -43,15 +43,15 @@ import { ResumeService } from './resume.service';
     }
 
     @if (previewUrl) {
-      <section class="preview-panel panel">
-        <div class="preview-header">
+      <section class="panel mb-4">
+        <div class="mb-[.85rem] flex items-center justify-between gap-4">
           <div>
-            <h2>{{ previewTitle }}</h2>
-            <p>Inline PDF preview</p>
+            <h2 class="m-0 text-[1rem]">{{ previewTitle }}</h2>
+            <p class="m-0 mt-[.2rem] text-[.75rem] text-af-text-faint">Inline PDF preview</p>
           </div>
           <button class="secondary-button" type="button" (click)="closePreview()"><mat-icon>close</mat-icon> Close</button>
         </div>
-        <iframe class="preview-frame" [src]="previewUrl" title="Resume preview"></iframe>
+        <iframe class="h-[min(70vh,820px)] w-full rounded-af border border-af-border bg-white" [src]="previewUrl" title="Resume preview"></iframe>
       </section>
     }
 
@@ -65,18 +65,18 @@ import { ResumeService } from './resume.service';
       </div>
     }
     @else {
-      <section class="resume-grid">
+      <section class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
         @for (resume of resumes; track resume.id) {
-          <article class="panel resume-card">
-            <header>
-              <div>
-                <strong>{{ resume.title }}</strong>
-                <span>{{ resume.fileName }} · {{ formatSize(resume.fileSize) }}</span>
+          <article class="panel">
+            <header class="mb-3 flex items-start justify-between gap-3">
+              <div class="flex flex-col gap-1">
+                <strong class="text-[.95rem] text-af-text">{{ resume.title }}</strong>
+                <span class="text-[.78rem] text-af-text-faint">{{ resume.fileName }} · {{ formatSize(resume.fileSize) }}</span>
               </div>
-              <mat-icon>picture_as_pdf</mat-icon>
+              <mat-icon class="text-af-accent">picture_as_pdf</mat-icon>
             </header>
-            <p>{{ resume.description || 'No description added.' }}</p>
-            <div class="card-actions">
+            <p class="m-0 mb-4 min-h-[2.4rem] text-[.78rem] leading-[1.55] text-af-text-faint">{{ resume.description || 'No description added.' }}</p>
+            <div class="flex flex-wrap gap-2">
               <button class="secondary-button" type="button" (click)="preview(resume)"><mat-icon>visibility</mat-icon> View</button>
               <button class="text-button" type="button" (click)="edit(resume)">Edit</button>
               <button class="danger-text" type="button" (click)="remove(resume)">Delete</button>
@@ -86,51 +86,6 @@ import { ResumeService } from './resume.service';
       </section>
     }
   `,
-  styles: [`
-    .resume-grid {
-      display: grid;
-      gap: 1rem;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    }
-    .resume-card header {
-      align-items: flex-start;
-      display: flex;
-      justify-content: space-between;
-      gap: .75rem;
-      margin-bottom: .75rem;
-    }
-    .resume-card header div { display: flex; flex-direction: column; gap: .25rem; }
-    .resume-card strong { color: var(--af-text); font-size: .95rem; }
-    .resume-card span, .resume-card p { color: var(--af-text-faint); font-size: .78rem; }
-    .resume-card p { line-height: 1.55; margin: 0 0 1rem; min-height: 2.4rem; }
-    .resume-card mat-icon { color: var(--af-accent); }
-    .card-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
-    .preview-panel { margin-bottom: 1rem; }
-    .preview-header {
-      align-items: center;
-      display: flex;
-      justify-content: space-between;
-      gap: 1rem;
-      margin-bottom: .85rem;
-    }
-    .preview-header h2 { font-size: 1rem; margin: 0; }
-    .preview-header p { color: var(--af-text-faint); font-size: .75rem; margin: .2rem 0 0; }
-    .preview-frame {
-      background: #fff;
-      border: 1px solid var(--af-border);
-      border-radius: var(--af-radius);
-      height: min(70vh, 820px);
-      width: 100%;
-    }
-    .actions {
-      border-top: 1px solid var(--af-divider);
-      display: flex;
-      gap: .65rem;
-      justify-content: flex-end;
-      margin-top: .5rem;
-      padding-top: 1.25rem;
-    }
-  `],
 })
 export class ResumePageComponent implements OnInit, OnDestroy {
   private readonly service = inject(ResumeService);

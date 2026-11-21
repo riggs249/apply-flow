@@ -24,7 +24,7 @@ import { DatePickerComponent } from '../../shared/components/date-picker/date-pi
   ],
   template: `
     <app-page-header title="Applications" description="Track every opportunity from first contact to hire.">
-      <div class="header-actions"><a class="secondary-button" routerLink="/applications/board"><mat-icon>view_kanban</mat-icon> Pipeline</a><a class="primary-button" routerLink="/applications/new"><mat-icon>add</mat-icon> Add application</a></div>
+      <div class="flex gap-[.6rem]"><a class="secondary-button" routerLink="/applications/board"><mat-icon>view_kanban</mat-icon> Pipeline</a><a class="primary-button" routerLink="/applications/new"><mat-icon>add</mat-icon> Add application</a></div>
     </app-page-header>
     <section class="toolbar">
       <div class="search"><mat-icon>search</mat-icon><input [formControl]="filters.controls.query" placeholder="Search company or position" /></div>
@@ -47,28 +47,18 @@ import { DatePickerComponent } from '../../shared/components/date-picker/date-pi
               <td>
                 <span [class]="'status ' + application.status.toLowerCase()">{{ label(application.status) }}</span>
                 @if (application.status === 'IN_PROCESS' && application.processStage) {
-                  <small class="stage">{{ label(application.processStage) }}</small>
+                  <small class="!mt-[.3rem] !text-[.68rem]">{{ label(application.processStage) }}</small>
                 }
               </td>
               <td>{{ label(application.employmentType) }}</td>
               <td>{{ application.applicationDate ? (application.applicationDate | date:'MMM d, y') : '—' }}</td>
-              <td><mat-icon>chevron_right</mat-icon></td>
+              <td><mat-icon class="!size-[19px] !text-[19px] text-af-text-faint">chevron_right</mat-icon></td>
             </tr>
           }</tbody></table></div>
         <footer><span>Showing {{ applications.length }} of {{ totalElements }} applications</span><div class="pager"><button [disabled]="page === 0" (click)="load(page - 1)"><mat-icon>chevron_left</mat-icon></button><span>Page {{ page + 1 }} of {{ totalPages || 1 }}</span><button [disabled]="page + 1 >= totalPages" (click)="load(page + 1)"><mat-icon>chevron_right</mat-icon></button></div></footer>
       </section>
     }
   `,
-  styles: [`
-    .header-actions { display: flex; gap: .6rem; }
-    td:last-child mat-icon { color: var(--af-text-faint); font-size: 19px; height: 19px; width: 19px; }
-    .stage { color: var(--af-text-faint); display: block; font-size: .68rem; margin-top: .3rem; }
-    .status.wishlist { background: var(--af-slate-soft); color: var(--af-slate); }
-    .status.applied { background: var(--af-accent-soft); color: var(--af-accent); }
-    .status.in_process { background: var(--af-amber-soft); color: var(--af-amber); }
-    .status.hired { background: var(--af-success-soft); color: var(--af-success-deep); }
-    .status.rejected, .status.withdrawn { background: var(--af-danger-soft); color: var(--af-danger); }
-  `],
 })
 export class ApplicationListPageComponent implements OnInit {
   private readonly service = inject(ApplicationService);

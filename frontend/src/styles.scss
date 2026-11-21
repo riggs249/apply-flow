@@ -94,6 +94,36 @@ mat-icon {
   overflow: visible;
 }
 
+/* —— Pipeline drag preview (rendered in CDK overlay, outside component encapsulation) —— */
+.cdk-drag-preview {
+  box-sizing: border-box;
+  opacity: 1 !important;
+  box-shadow: none !important;
+}
+
+.pipeline-card-preview {
+  background: #ffffff;
+  border: 1px solid var(--af-border);
+  border-radius: var(--af-radius);
+  box-shadow: 0 8px 24px rgba(20, 27, 36, 0.14);
+  cursor: grabbing;
+  opacity: 1;
+  padding: 0.8rem;
+  text-decoration: none;
+  width: 220px;
+}
+
+.cdk-drag-placeholder.pipeline-card {
+  background: var(--af-border-soft);
+  border: 1px dashed var(--af-border);
+  box-shadow: none;
+  opacity: 1;
+}
+
+.cdk-drag-placeholder.pipeline-card > * {
+  visibility: hidden;
+}
+
 /* —— Shared primitives —— */
 
 .primary-button,
@@ -192,6 +222,11 @@ mat-icon {
   font-size: 0.78rem;
   font-weight: 650;
   text-decoration: none;
+}
+
+.row-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .danger-text {

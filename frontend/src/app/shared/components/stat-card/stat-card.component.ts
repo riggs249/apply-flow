@@ -6,59 +6,21 @@ import { MatIconModule } from '@angular/material/icon';
   standalone: true,
   imports: [MatIconModule],
   template: `
-    <article class="stat-card">
-      <div class="stat-top">
-        <span class="label">{{ label() }}</span>
-        <span class="icon"><mat-icon>{{ icon() }}</mat-icon></span>
+    <article class="rounded-af-lg border border-af-border bg-af-surface px-5 py-[1.15rem] shadow-af">
+      <div class="mb-[1.1rem] flex items-center justify-between">
+        <span class="text-[.84rem] font-semibold text-af-text-muted">{{ label() }}</span>
+        <span class="flex size-8 items-center justify-center rounded-[9px] bg-af-accent-soft text-af-accent">
+          <mat-icon class="!size-[19px] !text-[19px]">{{ icon() }}</mat-icon>
+        </span>
       </div>
-      <strong>{{ value() }}</strong>
-      <span class="trend" [class.positive]="positive()">{{ trend() }}</span>
+      <strong class="block text-[1.75rem] font-bold tracking-[-.04em] text-af-text">{{ value() }}</strong>
+      <span
+        class="mt-2 block text-[.75rem]"
+        [class.text-af-text-faint]="!positive()"
+        [class.text-af-success-deep]="positive()"
+      >{{ trend() }}</span>
     </article>
   `,
-  styles: [`
-    .stat-card {
-      background: var(--af-surface);
-      border: 1px solid var(--af-border);
-      border-radius: var(--af-radius-lg);
-      box-shadow: var(--af-shadow);
-      padding: 1.15rem 1.25rem;
-    }
-    .stat-top {
-      align-items: center;
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 1.1rem;
-    }
-    .label {
-      color: var(--af-text-muted);
-      font-size: .84rem;
-      font-weight: 600;
-    }
-    .icon {
-      align-items: center;
-      background: var(--af-accent-soft);
-      border-radius: 9px;
-      color: var(--af-accent);
-      display: flex;
-      height: 2rem;
-      justify-content: center;
-      width: 2rem;
-    }
-    .icon mat-icon { font-size: 19px; height: 19px; width: 19px; }
-    strong {
-      color: var(--af-text);
-      display: block;
-      font-size: 1.75rem;
-      letter-spacing: -.04em;
-    }
-    .trend {
-      color: var(--af-text-faint);
-      display: block;
-      font-size: .75rem;
-      margin-top: .5rem;
-    }
-    .trend.positive { color: var(--af-success-deep); }
-  `],
 })
 export class StatCardComponent {
   readonly label = input.required<string>();
