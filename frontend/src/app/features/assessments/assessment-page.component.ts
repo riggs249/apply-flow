@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ApplicationService } from '../applications/application.service';
 import { ApplicationRecord } from '../applications/application.models';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { LoadingStateComponent } from '../../shared/components/loading-state/loading-state.component';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { scrollToTop } from '../../shared/utils/scroll';
 import { AssessmentRecord, AssessmentStatus } from './assessment.models';
@@ -13,7 +14,7 @@ import { AssessmentService } from './assessment.service';
 @Component({
   selector: 'app-assessment-page',
   standalone: true,
-  imports: [ReactiveFormsModule, MatIconModule, PageHeaderComponent, DatePipe],
+  imports: [ReactiveFormsModule, MatIconModule, PageHeaderComponent, DatePipe, LoadingStateComponent],
   template: `
     <app-page-header title="Assessments" description="Track coding exams, technical work, deadlines, and results.">
       <button class="primary-button" type="button" (click)="openCreate()"><mat-icon>add</mat-icon> Add assessment</button>
@@ -37,7 +38,7 @@ import { AssessmentService } from './assessment.service';
         <div class="flex justify-end gap-[.65rem] border-t border-af-divider pt-4"><button class="secondary-button" type="button" (click)="closeForm()">Cancel</button><button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Saving…' : 'Save assessment' }}</button></div>
       </form>
     }
-    @if (loading) { <div class="state">Loading assessments…</div> } @else if (!assessments.length) { <div class="empty"><mat-icon>assignment</mat-icon><h2>No assessments recorded</h2><p>Add a technical test or coding examination.</p></div> } @else {
+    @if (loading) { <app-loading-state message="Loading assessments…" /> } @else if (!assessments.length) { <div class="empty"><mat-icon>assignment</mat-icon><h2>No assessments recorded</h2><p>Add a technical test or coding examination.</p></div> } @else {
       <section class="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-[.8rem]">
         @for (item of assessments; track item.id) {
           <article class="flex h-[22rem] flex-col overflow-hidden rounded-af-lg border border-af-border bg-af-surface p-4 shadow-af">

@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ApplicationService } from '../applications/application.service';
 import { ApplicationRecord } from '../applications/application.models';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { LoadingStateComponent } from '../../shared/components/loading-state/loading-state.component';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { scrollToTop } from '../../shared/utils/scroll';
 import { InterviewOutcome, InterviewRecord } from './interview.models';
@@ -13,7 +14,7 @@ import { InterviewService } from './interview.service';
 @Component({
   selector: 'app-interview-page',
   standalone: true,
-  imports: [ReactiveFormsModule, MatIconModule, PageHeaderComponent, DatePipe],
+  imports: [ReactiveFormsModule, MatIconModule, PageHeaderComponent, DatePipe, LoadingStateComponent],
   template: `
     <app-page-header title="Interviews" description="Schedule conversations and capture preparation and reflections.">
       <button class="primary-button" type="button" (click)="openCreate()"><mat-icon>add</mat-icon> Schedule interview</button>
@@ -40,7 +41,7 @@ import { InterviewService } from './interview.service';
         <div class="flex justify-end gap-[.65rem] border-t border-af-divider pt-4"><button class="secondary-button" type="button" (click)="closeForm()">Cancel</button><button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Saving…' : 'Save interview' }}</button></div>
       </form>
     }
-    @if (loading) { <div class="state">Loading interviews…</div> }
+    @if (loading) { <app-loading-state message="Loading interviews…" /> }
     @else if (!interviews.length) {
       <div class="empty"><mat-icon>calendar_month</mat-icon><h2>No interviews scheduled</h2><p>Add the next conversation for an application.</p></div>
     }

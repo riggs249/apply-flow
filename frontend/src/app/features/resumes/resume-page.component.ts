@@ -3,6 +3,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { LoadingStateComponent } from '../../shared/components/loading-state/loading-state.component';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { scrollToTop } from '../../shared/utils/scroll';
 import { ResumeRecord } from './resume.models';
@@ -11,7 +12,7 @@ import { ResumeService } from './resume.service';
 @Component({
   selector: 'app-resume-page',
   standalone: true,
-  imports: [ReactiveFormsModule, MatIconModule, PageHeaderComponent],
+  imports: [ReactiveFormsModule, MatIconModule, PageHeaderComponent, LoadingStateComponent],
   template: `
     <app-page-header title="Resumes" description="Upload PDF CVs once, then attach them to applications.">
       <button class="primary-button" type="button" (click)="openCreate()"><mat-icon>upload_file</mat-icon> Upload resume</button>
@@ -57,7 +58,7 @@ import { ResumeService } from './resume.service';
       </section>
     }
 
-    @if (loading) { <div class="state">Loading resumes…</div> }
+    @if (loading) { <app-loading-state message="Loading resumes…" /> }
     @else if (!resumes.length) {
       <div class="empty">
         <mat-icon>description</mat-icon>

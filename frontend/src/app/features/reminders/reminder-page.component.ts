@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ApplicationService } from '../applications/application.service';
 import { ApplicationRecord } from '../applications/application.models';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { LoadingStateComponent } from '../../shared/components/loading-state/loading-state.component';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { scrollToTop } from '../../shared/utils/scroll';
 import { ReminderRecord, ReminderType } from './reminder.models';
@@ -13,7 +14,7 @@ import { ReminderService } from './reminder.service';
 @Component({
   selector: 'app-reminder-page',
   standalone: true,
-  imports: [ReactiveFormsModule, MatIconModule, PageHeaderComponent, DatePipe],
+  imports: [ReactiveFormsModule, MatIconModule, PageHeaderComponent, DatePipe, LoadingStateComponent],
   template: `
     <app-page-header title="Reminders" description="Keep follow-ups and deadlines from slipping through the cracks.">
       <button class="primary-button" type="button" (click)="openCreate()"><mat-icon>add</mat-icon> Add reminder</button>
@@ -34,7 +35,7 @@ import { ReminderService } from './reminder.service';
         <div class="flex justify-end gap-[.65rem] border-t border-af-divider pt-4"><button class="secondary-button" type="button" (click)="closeForm()">Cancel</button><button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Saving…' : 'Save reminder' }}</button></div>
       </form>
     }
-    @if (loading) { <div class="state">Loading reminders…</div> } @else {
+    @if (loading) { <app-loading-state message="Loading reminders…" /> } @else {
       @for (group of groups; track group.key) {
         @if (group.items.length) {
           <section class="mb-5"><div class="mx-0 mb-[.65rem] mt-2 flex items-center gap-2"><h2 class="m-0 text-[.88rem] text-af-text-secondary">{{ group.title }}</h2><span class="rounded-md bg-af-border-soft px-[.45rem] py-[.2rem] text-[.68rem] text-af-text-muted">{{ group.items.length }}</span></div>

@@ -6,15 +6,16 @@ import { ApplicationService } from './application.service';
 import { ApplicationActivity, ApplicationRecord } from './application.models';
 import { DatePipe } from '@angular/common';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { LoadingStateComponent } from '../../shared/components/loading-state/loading-state.component';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { ResumeService } from '../resumes/resume.service';
 
 @Component({
   selector: 'app-application-detail-page',
   standalone: true,
-  imports: [RouterLink, MatIconModule, PageHeaderComponent, DatePipe],
+  imports: [RouterLink, MatIconModule, PageHeaderComponent, DatePipe, LoadingStateComponent],
   template: `
-    @if (loading) { <div class="state">Loading application…</div> }
+    @if (loading) { <app-loading-state message="Loading application…" /> }
     @else if (error) { <div class="error">{{ error }}</div> }
     @else if (application) {
       <div class="mb-3">

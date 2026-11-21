@@ -26,7 +26,7 @@ export const routes: Routes = [
       { path: 'dashboard', component: DashboardPageComponent, title: 'Dashboard · ApplyFlow' },
       { path: 'applications', component: ApplicationListPageComponent, title: 'Applications · ApplyFlow' },
       { path: 'applications/new', component: ApplicationFormPageComponent, title: 'Add application · ApplyFlow' },
-      { path: 'applications/board', component: ApplicationBoardPageComponent, title: 'Application pipeline · ApplyFlow' },
+      { path: 'applications/board', component: ApplicationBoardPageComponent, title: 'Kanban board · ApplyFlow' },
       { path: 'applications/:id/edit', component: ApplicationFormPageComponent, title: 'Edit application · ApplyFlow' },
       { path: 'applications/:id', component: ApplicationDetailPageComponent, title: 'Application · ApplyFlow' },
       { path: 'companies', component: CompanyPageComponent, title: 'Companies · ApplyFlow' },

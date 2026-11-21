@@ -8,8 +8,9 @@ import { switchMap } from 'rxjs/operators';
 import { ApplicationService } from './application.service';
 import { ApplicationRecord, ApplicationStatus, PageResponse, ProcessStage } from './application.models';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { KanbanCardSkeletonComponent } from '../../shared/components/kanban-card-skeleton/kanban-card-skeleton.component';
 
-interface PipelineColumn {
+interface BoardColumn {
   status: ApplicationStatus;
   label: string;
   applications: ApplicationRecord[];
@@ -18,28 +19,49 @@ interface PipelineColumn {
 @Component({
   selector: 'app-application-board-page',
   standalone: true,
-  imports: [CdkDropListGroup, CdkDropList, CdkDrag, CdkDragPreview, RouterLink, MatIconModule, PageHeaderComponent, DatePipe],
+  imports: [
+    CdkDropListGroup,
+    CdkDropList,
+    CdkDrag,
+    CdkDragPreview,
+    RouterLink,
+    MatIconModule,
+    PageHeaderComponent,
+    DatePipe,
+    KanbanCardSkeletonComponent,
+  ],
   template: `
-    <app-page-header title="Application pipeline" description="Move opportunities through each stage of your job search.">
+    <app-page-header title="Kanban board" description="Move opportunities through each stage of your job search.">
       <a class="secondary-button" routerLink="/applications"><mat-icon>table_rows</mat-icon> List view</a>
     </app-page-header>
     @if (error) { <div class="error">{{ error }}</div> }
-    @if (loading) { <div class="state">Loading pipeline…</div> }
-    @else {
-      <section
-        class="relative left-1/2 w-[min(100vw-6rem,1680px)] -translate-x-1/2 grid grid-cols-6 gap-[.55rem] pb-2 max-[980px]:w-[min(100vw-2rem,1680px)] max-[980px]:auto-cols-[minmax(180px,1fr)] max-[980px]:grid-flow-col max-[980px]:grid-cols-none max-[980px]:overflow-x-auto"
-        cdkDropListGroup
-      >
-        @for (column of columns; track column.status) {
-          <article class="flex min-h-[30rem] min-w-0 flex-col rounded-af-lg border border-af-border bg-[rgba(255,255,255,.55)] max-[980px]:min-w-[180px]">
-            <header class="flex items-center justify-between gap-1 px-[.65rem] py-[.75rem]">
-              <div class="flex min-w-0 items-center gap-[.35rem]">
-                <span class="size-2 shrink-0 rounded-full" [class]="markerClass(column.status)"></span>
-                <h2 class="m-0 truncate text-[.72rem] text-af-text-secondary">{{ column.label }}</h2>
-              </div>
+    <section
+      class="relative left-1/2 w-[min(100vw-6rem,1680px)] -translate-x-1/2 grid grid-cols-6 gap-[.55rem] pb-2 max-[980px]:w-[min(100vw-2rem,1680px)] max-[980px]:auto-cols-[minmax(180px,1fr)] max-[980px]:grid-flow-col max-[980px]:grid-cols-none max-[980px]:overflow-x-auto"
+      cdkDropListGroup
+    >
+      @for (column of columns; track column.status) {
+        <article class="flex min-h-[30rem] min-w-0 flex-col rounded-af-lg border border-af-border bg-[rgba(255,255,255,.55)] max-[980px]:min-w-[180px]">
+          <header class="flex items-center justify-between gap-1 px-[.65rem] py-[.75rem]">
+            <div class="flex min-w-0 items-center gap-[.35rem]">
+              <span class="size-2 shrink-0 rounded-full" [class]="markerClass(column.status)"></span>
+              <h2 class="m-0 truncate text-[.72rem] text-af-text-secondary">{{ column.label }}</h2>
+            </div>
+            @if (loading) {
+              <span class="af-skeleton af-skeleton--header !w-6 !rounded-md"></span>
+            } @else {
               <span class="shrink-0 rounded-md bg-af-border-soft px-[.35rem] py-[.15rem] text-center text-[.65rem] text-af-text-muted">{{ column.applications.length }}</span>
-            </header>
-            <div class="min-h-0 flex-1 px-[.5rem] pb-[.55rem] pt-[.1rem]" cdkDropList [cdkDropListData]="column.applications" (cdkDropListDropped)="drop($event, column.status)">
+            }
+          </header>
+          <div
+            class="min-h-0 flex-1 px-[.5rem] pb-[.55rem] pt-[.1rem]"
+            cdkDropList
+            [cdkDropListData]="column.applications"
+            [cdkDropListDisabled]="loading"
+            (cdkDropListDropped)="drop($event, column.status)"
+          >
+            @if (loading) {
+              <app-kanban-card-skeleton [count]="skeletonCount(column.status)" />
+            } @else {
               @for (application of column.applications; track application.id) {
                 <a
                   class="pipeline-card mb-[.5rem] block cursor-grab rounded-af border border-af-border bg-af-surface p-[.7rem] no-underline shadow-af active:cursor-grabbing"
@@ -64,17 +86,17 @@ interface PipelineColumn {
                   @if (application.applicationDate) { <time class="mt-[.25rem] block text-[.68rem] text-af-text-faint">{{ application.applicationDate | date:'MMM d, y' }}</time> }
                 </a>
               } @empty { <div class="mt-2 rounded-af-sm border border-dashed border-af-border px-2 py-4 text-center text-[.7rem] text-af-text-faint">Drop applications here</div> }
-            </div>
-          </article>
-        }
-      </section>
-    }
+            }
+          </div>
+        </article>
+      }
+    </section>
   `,
 })
 export class ApplicationBoardPageComponent implements OnInit {
   private readonly service = inject(ApplicationService);
   readonly statuses: ApplicationStatus[] = ['WISHLIST', 'APPLIED', 'IN_PROCESS', 'REJECTED', 'HIRED', 'WITHDRAWN'];
-  columns: PipelineColumn[] = this.statuses.map(status => ({ status, label: this.label(status), applications: [] }));
+  columns: BoardColumn[] = this.statuses.map(status => ({ status, label: this.label(status), applications: [] }));
   loading = true;
   error = '';
 
@@ -87,8 +109,21 @@ export class ApplicationBoardPageComponent implements OnInit {
     WITHDRAWN: 'bg-af-danger',
   };
 
+  private readonly skeletonCounts: Record<ApplicationStatus, number> = {
+    WISHLIST: 3,
+    APPLIED: 4,
+    IN_PROCESS: 3,
+    REJECTED: 2,
+    HIRED: 2,
+    WITHDRAWN: 2,
+  };
+
   markerClass(status: ApplicationStatus): string {
     return this.markerColors[status];
+  }
+
+  skeletonCount(status: ApplicationStatus): number {
+    return this.skeletonCounts[status];
   }
 
   ngOnInit(): void {
@@ -106,7 +141,7 @@ export class ApplicationBoardPageComponent implements OnInit {
         this.loading = false;
       },
       error: () => {
-        this.error = 'The application pipeline could not be loaded.';
+        this.error = 'The kanban board could not be loaded.';
         this.loading = false;
       },
     });
