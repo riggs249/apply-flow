@@ -65,9 +65,9 @@ import { ResumeService } from './resume.service';
       </div>
     }
     @else {
-      <section class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
+      <section class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] items-stretch gap-4">
         @for (resume of resumes; track resume.id) {
-          <article class="panel">
+          <article class="panel flex h-full flex-col">
             <header class="mb-3 flex items-start justify-between gap-3">
               <div class="flex flex-col gap-1">
                 <strong class="text-[.95rem] text-af-text">{{ resume.title }}</strong>
@@ -75,11 +75,13 @@ import { ResumeService } from './resume.service';
               </div>
               <mat-icon class="text-af-accent">picture_as_pdf</mat-icon>
             </header>
-            <p class="m-0 mb-4 min-h-[2.4rem] text-[.78rem] leading-[1.55] text-af-text-faint">{{ resume.description || 'No description added.' }}</p>
-            <div class="flex flex-wrap gap-2">
+            <p class="m-0 mb-4 flex-1 text-[.78rem] leading-[1.55] text-af-text-faint">{{ resume.description || 'No description added.' }}</p>
+            <div class="mt-auto flex items-center justify-between gap-3 border-t border-af-divider pt-3">
               <button class="secondary-button" type="button" (click)="preview(resume)"><mat-icon>visibility</mat-icon> View</button>
-              <button class="text-button" type="button" (click)="edit(resume)">Edit</button>
-              <button class="danger-text" type="button" (click)="remove(resume)">Delete</button>
+              <div class="flex items-center gap-3">
+                <button class="text-button" type="button" (click)="edit(resume)">Edit</button>
+                <button class="danger-text" type="button" (click)="remove(resume)">Delete</button>
+              </div>
             </div>
           </article>
         }

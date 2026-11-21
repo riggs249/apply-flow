@@ -10,13 +10,10 @@ import com.applyflow.common.exception.ResourceNotFoundException;
 import com.applyflow.user.entity.User;
 import com.applyflow.user.repository.UserRepository;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.net.MalformedURLException;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -83,14 +80,13 @@ public class ResumeServiceImpl implements ResumeService {
     public Resource loadFile(UUID userId, UUID resumeId) {
         Resume resume = getOwned(userId, resumeId);
         try {
-            Path path = fileStorageService.resolve(resume.getStorageKey());
-            Resource resource = new UrlResource(path.toUri());
+            Resource resource = fileStorageService.load(resume.getStorageKey());
             if (!resource.exists() || !resource.isReadable()) {
                 throw new ResourceNotFoundException("Resume file not found: " + resumeId);
             }
             return resource;
-        } catch (MalformedURLException ex) {
-            throw new IllegalStateException("Could not read resume file.", ex);
+        } catch (IllegalStateException ex) {
+            throw new ResourceNotFoundException("Resume file not found: " + resumeId);
         }
     }
 

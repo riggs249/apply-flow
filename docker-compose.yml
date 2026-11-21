@@ -14,6 +14,11 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
       DDL_AUTO: ${DDL_AUTO:-update}
       SERVER_PORT: 8080
+      STORAGE_TYPE: ${STORAGE_TYPE:-local}
+      UPLOAD_DIR: ${UPLOAD_DIR:-./uploads}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+      SUPABASE_STORAGE_BUCKET: ${SUPABASE_STORAGE_BUCKET:-resumes}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:
