@@ -25,6 +25,7 @@ public class JobApplicationMapper {
                 application.getResumeVersion(),
                 resume != null ? resume.getId() : null,
                 resume != null ? resume.getTitle() : null,
+                resume != null ? resume.getFileName() : null,
                 resume != null ? resume.getDescription() : null,
                 application.getStatus(),
                 application.getProcessStage(),

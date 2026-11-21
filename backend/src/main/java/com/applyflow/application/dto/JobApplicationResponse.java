@@ -25,6 +25,7 @@ public record JobApplicationResponse(
         String resumeVersion,
         UUID resumeId,
         String resumeTitle,
+        String resumeFileName,
         String resumeDescription,
         ApplicationStatus status,
         ProcessStage processStage,

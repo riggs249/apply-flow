@@ -56,13 +56,15 @@ import { CompanyService } from './company.service';
             <tbody>
               @for (company of companies; track company.id) {
                 <tr>
-                  <td><strong>{{ company.name }}</strong>@if (company.notes) { <small class="max-w-[28rem] truncate">{{ company.notes }}</small> }</td>
-                  <td>{{ company.industry || '—' }}</td>
-                  <td>{{ company.location || '—' }}</td>
-                  <td>@if (company.website) { <a [href]="company.website" target="_blank" rel="noopener noreferrer">Visit</a> } @else { — }</td>
-                  <td class="row-actions">
-                    <button type="button" class="text-button" (click)="edit(company)">Edit</button>
-                    <button type="button" class="danger-text" (click)="deleteCompany(company)">Delete</button>
+                  <td class="align-middle"><strong>{{ company.name }}</strong>@if (company.notes) { <small class="max-w-[28rem] truncate">{{ company.notes }}</small> }</td>
+                  <td class="align-middle">{{ company.industry || '—' }}</td>
+                  <td class="align-middle">{{ company.location || '—' }}</td>
+                  <td class="align-middle">@if (company.website) { <a [href]="company.website" target="_blank" rel="noopener noreferrer">Visit</a> } @else { — }</td>
+                  <td class="align-middle">
+                    <div class="flex items-center justify-end gap-3">
+                      <button type="button" class="text-button" (click)="edit(company)">Edit</button>
+                      <button type="button" class="danger-text" (click)="deleteCompany(company)">Delete</button>
+                    </div>
                   </td>
                 </tr>
               }
