@@ -119,6 +119,21 @@ export class AuthService {
     );
   }
 
+  getProfile() {
+    return this.http.get<{ email: string; displayName: string }>(`${environment.apiUrl}/me/profile`);
+  }
+
+  updateProfile(displayName: string) {
+    return this.http.put<{
+      email: string;
+      displayName: string;
+      accessToken: string;
+      expiresInSeconds: number;
+    }>(`${environment.apiUrl}/me/profile`, { displayName }).pipe(
+      tap(response => this.setToken(response.accessToken)),
+    );
+  }
+
   private applySession(response: AuthResponse): void {
     this.accessToken.set(response.accessToken);
     this.refreshToken = response.refreshToken;

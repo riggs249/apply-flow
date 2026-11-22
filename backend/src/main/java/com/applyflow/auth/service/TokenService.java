@@ -39,6 +39,17 @@ public class TokenService {
     }
 
     public AuthResponse issue(User user) {
+        String accessToken = issueAccessToken(user);
+        String refreshToken = UUID.randomUUID() + "." + UUID.randomUUID();
+        refreshTokenRepository.save(new RefreshToken(
+                user,
+                hash(refreshToken),
+                Instant.now().plus(refreshTokenDays, ChronoUnit.DAYS)
+        ));
+        return new AuthResponse(accessToken, refreshToken, accessTokenExpiresInSeconds());
+    }
+
+    public String issueAccessToken(User user) {
         Instant now = Instant.now();
         Instant expiresAt = now.plus(accessTokenMinutes, ChronoUnit.MINUTES);
         JwtClaimsSet claims = JwtClaimsSet.builder()
@@ -49,18 +60,14 @@ public class TokenService {
                 .claim("email", user.getEmail())
                 .claim("displayName", user.getDisplayName())
                 .build();
-        String accessToken = jwtEncoder.encode(JwtEncoderParameters.from(
+        return jwtEncoder.encode(JwtEncoderParameters.from(
                 org.springframework.security.oauth2.jwt.JwsHeader.with(MacAlgorithm.HS256).build(),
                 claims
         )).getTokenValue();
+    }
 
-        String refreshToken = UUID.randomUUID() + "." + UUID.randomUUID();
-        refreshTokenRepository.save(new RefreshToken(
-                user,
-                hash(refreshToken),
-                now.plus(refreshTokenDays, ChronoUnit.DAYS)
-        ));
-        return new AuthResponse(accessToken, refreshToken, accessTokenMinutes * 60);
+    public long accessTokenExpiresInSeconds() {
+        return accessTokenMinutes * 60;
     }
 
     public RefreshToken findUsable(String rawToken) {

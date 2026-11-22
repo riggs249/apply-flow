@@ -41,7 +41,6 @@ export const routes: Routes = [
       { path: 'interviews', component: InterviewPageComponent, title: 'Interviews · HanapTracker' },
       { path: 'assessments', component: AssessmentPageComponent, title: 'Assessments · HanapTracker' },
       { path: 'reminders', component: ReminderPageComponent, title: 'Reminders · HanapTracker' },
-      { path: 'analytics', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'settings', component: SettingsPageComponent, title: 'Settings · HanapTracker' },
     ],
   },

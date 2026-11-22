@@ -1,10 +1,11 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { finalize } from 'rxjs/operators';
 import { AuthService } from '../../core/auth/auth.service';
 import { PreferencesService } from '../../core/preferences/preferences.service';
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { NotificationSettingsService } from './notification-settings.service';
 import { NotificationToggleRowComponent } from './notification-toggle-row.component';
@@ -24,15 +25,28 @@ import { NotificationToggleRowComponent } from './notification-toggle-row.compon
 
     <section class="grid grid-cols-2 gap-4 max-[800px]:grid-cols-[1fr]">
       <article class="panel">
-        <div class="panel-heading mb-[1.1rem]"><h2>Profile</h2><p>Signed-in account details from your session.</p></div>
-        <div class="flex items-center gap-[.8rem]">
+        <div class="panel-heading mb-[1.1rem]"><h2>Profile</h2><p>Update how your name appears across HanapTracker.</p></div>
+        <div class="mb-4 flex items-center gap-[.8rem]">
           <span class="flex size-10 items-center justify-center rounded-full bg-af-accent-soft text-[.75rem] font-bold text-af-accent">{{ user()?.initials || 'U' }}</span>
-          <div>
-            <strong class="block text-[.9rem] text-af-text">{{ user()?.displayName || 'Signed in' }}</strong>
-            <span class="mt-[.2rem] block text-[.75rem] text-af-text-faint">{{ user()?.email || 'Email unavailable' }}</span>
+          <div class="min-w-0">
+            <strong class="block truncate text-[.9rem] text-af-text">{{ user()?.displayName || 'Signed in' }}</strong>
+            <span class="mt-[.2rem] block truncate text-[.75rem] text-af-text-faint">{{ user()?.email || 'Email unavailable' }}</span>
           </div>
         </div>
-        <p class="m-0 mt-4 text-[.75rem] text-af-text-faint">Display name comes from your account. Profile editing is not available from the API yet.</p>
+        @if (profileError) {
+          <div class="mb-3 rounded-af-sm border border-af-danger-border bg-af-danger-soft p-[.7rem] text-[.78rem] text-af-danger">{{ profileError }}</div>
+        }
+        <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+          <label class="mb-3" for="displayName">Display name
+            <input id="displayName" type="text" formControlName="displayName" autocomplete="name" maxlength="100" />
+          </label>
+          <label class="mb-4" for="email">Email
+            <input id="email" type="email" [value]="user()?.email || ''" disabled />
+          </label>
+          <button class="primary-button" type="submit" [disabled]="profileForm.invalid || profileSaving || !profileForm.dirty">
+            {{ profileSaved ? 'Saved' : (profileSaving ? 'Saving…' : 'Save profile') }}
+          </button>
+        </form>
       </article>
 
       <article class="panel">
@@ -110,12 +124,16 @@ export class SettingsPageComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly preferences = inject(PreferencesService);
   private readonly notifications = inject(NotificationSettingsService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
 
   readonly user = this.auth.currentUser;
   readonly form = this.fb.nonNullable.group({
     pageSize: this.preferences.applicationsPageSize(),
+  });
+  readonly profileForm = this.fb.nonNullable.group({
+    displayName: ['', [Validators.required, Validators.maxLength(100)]],
   });
   readonly notificationForm = this.fb.nonNullable.group({
     reminderEmail: true,
@@ -125,6 +143,9 @@ export class SettingsPageComponent implements OnInit {
   });
   saved = false;
   loggingOut = false;
+  profileSaving = false;
+  profileSaved = false;
+  profileError = '';
   notificationsLoading = true;
   notificationsSaving = false;
   notificationsSaved = false;
@@ -147,6 +168,15 @@ export class SettingsPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.profileForm.patchValue({ displayName: this.user()?.displayName ?? '' });
+    this.auth.getProfile().subscribe({
+      next: profile => {
+        this.profileForm.reset({ displayName: profile.displayName });
+      },
+      error: () => {
+        // Fall back to the session user if the profile endpoint is unavailable.
+      },
+    });
     this.notifications.get().subscribe({
       next: settings => {
         this.notificationForm.setValue(settings);
@@ -155,6 +185,27 @@ export class SettingsPageComponent implements OnInit {
       error: () => {
         this.notificationError = 'Could not load email notification settings.';
         this.notificationsLoading = false;
+      },
+    });
+  }
+
+  saveProfile(): void {
+    this.profileForm.markAllAsTouched();
+    if (this.profileForm.invalid) {
+      return;
+    }
+    this.profileSaving = true;
+    this.profileError = '';
+    this.auth.updateProfile(this.profileForm.controls.displayName.value.trim()).pipe(
+      finalize(() => { this.profileSaving = false; }),
+    ).subscribe({
+      next: profile => {
+        this.profileForm.reset({ displayName: profile.displayName });
+        this.profileSaved = true;
+        setTimeout(() => { this.profileSaved = false; }, 1500);
+      },
+      error: () => {
+        this.profileError = 'Could not save your profile.';
       },
     });
   }
@@ -183,10 +234,20 @@ export class SettingsPageComponent implements OnInit {
   }
 
   logout(): void {
-    this.loggingOut = true;
-    this.auth.logout().subscribe({
-      next: () => void this.router.navigateByUrl('/login'),
-      error: () => void this.router.navigateByUrl('/login'),
+    this.confirmDialog.confirm({
+      title: 'Sign out',
+      message: 'Are you sure you want to sign out of HanapTracker?',
+      confirmLabel: 'Sign out',
+      cancelLabel: 'Stay signed in',
+    }).subscribe(confirmed => {
+      if (!confirmed) {
+        return;
+      }
+      this.loggingOut = true;
+      this.auth.logout().subscribe({
+        next: () => void this.router.navigateByUrl('/login'),
+        error: () => void this.router.navigateByUrl('/login'),
+      });
     });
   }
 }

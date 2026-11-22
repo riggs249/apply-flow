@@ -15,6 +15,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { ReminderService } from '../../features/reminders/reminder.service';
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 
 interface NavItem {
   label: string;
@@ -125,6 +126,7 @@ interface NavItem {
 })
 export class ShellNavComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly auth = inject(AuthService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly reminderService = inject(ReminderService);
   private readonly router = inject(Router);
   private readonly deckTop = viewChild.required<ElementRef<HTMLElement>>('deckTop');
@@ -149,7 +151,6 @@ export class ShellNavComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly secondaryNav: NavItem[] = [
     { label: 'Assessments', route: '/assessments' },
     { label: 'Reminders', route: '/reminders' },
-    { label: 'Analytics', route: '/analytics' },
     { label: 'Settings', route: '/settings' },
   ];
 
@@ -205,10 +206,20 @@ export class ShellNavComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   logout(): void {
-    this.navOpen.set(false);
-    this.auth.logout().subscribe({
-      next: () => void this.router.navigateByUrl('/login'),
-      error: () => void this.router.navigateByUrl('/login'),
+    this.confirmDialog.confirm({
+      title: 'Sign out',
+      message: 'Are you sure you want to sign out of HanapTracker?',
+      confirmLabel: 'Sign out',
+      cancelLabel: 'Stay signed in',
+    }).subscribe(confirmed => {
+      if (!confirmed) {
+        return;
+      }
+      this.navOpen.set(false);
+      this.auth.logout().subscribe({
+        next: () => void this.router.navigateByUrl('/login'),
+        error: () => void this.router.navigateByUrl('/login'),
+      });
     });
   }
 }
