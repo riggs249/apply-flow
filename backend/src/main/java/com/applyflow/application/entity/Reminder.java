@@ -34,6 +34,9 @@ public class Reminder extends BaseEntity {
     @Column(name = "completed_at")
     private Instant completedAt;
 
+    @Column(name = "emailed_at")
+    private Instant emailedAt;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private ReminderStatus status;
@@ -64,6 +67,9 @@ public class Reminder extends BaseEntity {
         this.title = title;
         this.description = description;
         this.reminderType = reminderType;
+        if (!this.remindAt.equals(remindAt)) {
+            this.emailedAt = null;
+        }
         this.remindAt = remindAt;
         this.application = application;
     }
@@ -85,10 +91,17 @@ public class Reminder extends BaseEntity {
     }
 
     public void reschedule(Instant remindAt) {
+        if (!this.remindAt.equals(remindAt)) {
+            this.emailedAt = null;
+        }
         this.remindAt = remindAt;
         if (this.status == ReminderStatus.OVERDUE) {
             this.status = ReminderStatus.PENDING;
         }
+    }
+
+    public void markEmailed(Instant emailedAt) {
+        this.emailedAt = emailedAt;
     }
 
     public User getUser() { return user; }
@@ -98,5 +111,6 @@ public class Reminder extends BaseEntity {
     public ReminderType getReminderType() { return reminderType; }
     public Instant getRemindAt() { return remindAt; }
     public Instant getCompletedAt() { return completedAt; }
+    public Instant getEmailedAt() { return emailedAt; }
     public ReminderStatus getStatus() { return status; }
 }

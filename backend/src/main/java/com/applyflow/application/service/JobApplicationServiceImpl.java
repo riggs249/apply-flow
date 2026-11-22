@@ -12,8 +12,11 @@ import com.applyflow.application.repository.ResumeRepository;
 import com.applyflow.common.exception.ResourceNotFoundException;
 import com.applyflow.company.entity.Company;
 import com.applyflow.company.repository.CompanyRepository;
+import com.applyflow.notification.NotificationDispatchService;
 import com.applyflow.user.entity.User;
 import com.applyflow.user.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -27,23 +30,28 @@ import java.util.UUID;
 @Service
 @Transactional
 public class JobApplicationServiceImpl implements JobApplicationService {
+    private static final Logger log = LoggerFactory.getLogger(JobApplicationServiceImpl.class);
+
     private final JobApplicationRepository applicationRepository;
     private final CompanyRepository companyRepository;
     private final UserRepository userRepository;
     private final ResumeRepository resumeRepository;
     private final JobApplicationMapper mapper;
     private final ApplicationActivityRepository activityRepository;
+    private final NotificationDispatchService notificationDispatchService;
 
     public JobApplicationServiceImpl(JobApplicationRepository applicationRepository, CompanyRepository companyRepository,
                                      UserRepository userRepository, ResumeRepository resumeRepository,
                                      JobApplicationMapper mapper,
-                                     ApplicationActivityRepository activityRepository) {
+                                     ApplicationActivityRepository activityRepository,
+                                     NotificationDispatchService notificationDispatchService) {
         this.applicationRepository = applicationRepository;
         this.companyRepository = companyRepository;
         this.userRepository = userRepository;
         this.resumeRepository = resumeRepository;
         this.mapper = mapper;
         this.activityRepository = activityRepository;
+        this.notificationDispatchService = notificationDispatchService;
     }
 
     @Override
@@ -101,6 +109,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
                 request.employmentType(), request.workArrangement(), request.status(), processStage, request.applicationDate(),
                 request.salaryExpectation(), resume, request.personalNotes());
         recordStatusChange(application, previousStatus, previousStage, request.status(), processStage);
+        notifyOutcomeIfChanged(application, previousStatus, request.status());
         return mapper.toResponse(application);
     }
 
@@ -114,6 +123,7 @@ public class JobApplicationServiceImpl implements JobApplicationService {
         validateStatus(status);
         application.changeStatus(status, normalizedStage);
         recordStatusChange(application, previousStatus, previousStage, status, normalizedStage);
+        notifyOutcomeIfChanged(application, previousStatus, status);
         return mapper.toResponse(application);
     }
 
@@ -169,6 +179,21 @@ public class JobApplicationServiceImpl implements JobApplicationService {
             recordActivity(application, "STATUS_CHANGED",
                     "Status changed from " + describe(previousStatus, previousStage)
                             + " to " + describe(newStatus, newStage) + ".");
+        }
+    }
+
+    private void notifyOutcomeIfChanged(JobApplication application, ApplicationStatus previousStatus,
+                                        ApplicationStatus newStatus) {
+        if (previousStatus == newStatus) {
+            return;
+        }
+        if (newStatus != ApplicationStatus.HIRED && newStatus != ApplicationStatus.REJECTED) {
+            return;
+        }
+        try {
+            notificationDispatchService.sendApplicationOutcome(application.getUser(), application, newStatus);
+        } catch (RuntimeException exception) {
+            log.warn("Failed to email outcome for application {}: {}", application.getId(), exception.getMessage());
         }
     }
 

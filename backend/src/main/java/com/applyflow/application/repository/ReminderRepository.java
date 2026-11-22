@@ -40,6 +40,9 @@ public interface ReminderRepository extends JpaRepository<Reminder, UUID> {
 
     @Query("""
             select r from Reminder r
+            join fetch r.user
+            left join fetch r.application application
+            left join fetch application.company
             where r.status = :status
               and r.remindAt <= :now
             """)

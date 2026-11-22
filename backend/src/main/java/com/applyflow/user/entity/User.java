@@ -8,9 +8,10 @@ import org.hibernate.annotations.ColumnDefault;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import java.util.UUID;
+
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "app_users")
@@ -28,6 +29,22 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "email_verified", nullable = false)
     @ColumnDefault("false")
     private boolean emailVerified = false;
+
+    @Column(name = "notify_reminder_email", nullable = false)
+    @ColumnDefault("true")
+    private boolean notifyReminderEmail = true;
+
+    @Column(name = "notify_interview_email", nullable = false)
+    @ColumnDefault("true")
+    private boolean notifyInterviewEmail = true;
+
+    @Column(name = "notify_assessment_email", nullable = false)
+    @ColumnDefault("true")
+    private boolean notifyAssessmentEmail = true;
+
+    @Column(name = "notify_outcome_email", nullable = false)
+    @ColumnDefault("true")
+    private boolean notifyOutcomeEmail = true;
 
     protected User() {
     }
@@ -69,6 +86,34 @@ public class User extends BaseEntity implements UserDetails {
 
     public void updateDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public boolean isNotifyReminderEmail() {
+        return notifyReminderEmail;
+    }
+
+    public boolean isNotifyInterviewEmail() {
+        return notifyInterviewEmail;
+    }
+
+    public boolean isNotifyAssessmentEmail() {
+        return notifyAssessmentEmail;
+    }
+
+    public boolean isNotifyOutcomeEmail() {
+        return notifyOutcomeEmail;
+    }
+
+    public void updateNotificationSettings(
+            boolean reminderEmail,
+            boolean interviewEmail,
+            boolean assessmentEmail,
+            boolean outcomeEmail
+    ) {
+        this.notifyReminderEmail = reminderEmail;
+        this.notifyInterviewEmail = interviewEmail;
+        this.notifyAssessmentEmail = assessmentEmail;
+        this.notifyOutcomeEmail = outcomeEmail;
     }
 
     @Override

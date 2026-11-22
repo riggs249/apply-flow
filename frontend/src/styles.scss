@@ -336,6 +336,12 @@ mat-icon {
   width: 100%;
 }
 
+.panel input[type='checkbox'] {
+  min-height: 0;
+  padding: 0;
+  width: auto;
+}
+
 .form-card textarea,
 .panel textarea {
   min-height: auto;

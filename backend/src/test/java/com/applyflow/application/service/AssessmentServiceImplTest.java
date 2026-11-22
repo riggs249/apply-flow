@@ -6,6 +6,7 @@ import com.applyflow.application.entity.JobApplication;
 import com.applyflow.application.repository.AssessmentRepository;
 import com.applyflow.application.repository.JobApplicationRepository;
 import com.applyflow.common.exception.ResourceNotFoundException;
+import com.applyflow.notification.NotificationDispatchService;
 import com.applyflow.user.entity.User;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,6 +25,7 @@ import static org.mockito.Mockito.when;
 class AssessmentServiceImplTest {
     @Mock AssessmentRepository assessmentRepository;
     @Mock JobApplicationRepository applicationRepository;
+    @Mock NotificationDispatchService notificationDispatchService;
     @InjectMocks AssessmentServiceImpl service;
 
     @Test
