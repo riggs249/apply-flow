@@ -47,3 +47,4 @@ app:
     access-token-minutes: ${JWT_ACCESS_TOKEN_MINUTES:15}
     refresh-token-days: ${JWT_REFRESH_TOKEN_DAYS:30}
     verification-token-hours: ${EMAIL_VERIFICATION_TOKEN_HOURS:24}
+    password-reset-token-hours: ${PASSWORD_RESET_TOKEN_HOURS:1}

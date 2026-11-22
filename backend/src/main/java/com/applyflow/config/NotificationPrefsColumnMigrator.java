@@ -30,7 +30,18 @@ public class NotificationPrefsColumnMigrator implements ApplicationRunner {
         ensureLeadEmailColumns("reminders");
         ensureLeadEmailColumns("interviews");
         ensureLeadEmailColumns("assessments");
-        log.info("Ensured notification preference columns and lead-email timestamps");
+        jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                    id uuid PRIMARY KEY,
+                    created_at timestamptz,
+                    updated_at timestamptz,
+                    user_id uuid NOT NULL REFERENCES app_users(id),
+                    token_hash varchar(64) NOT NULL UNIQUE,
+                    expires_at timestamptz NOT NULL,
+                    used_at timestamptz
+                )
+                """);
+        log.info("Ensured notification preference columns, lead-email timestamps, and password_reset_tokens");
     }
 
     private void ensureLeadEmailColumns(String table) {

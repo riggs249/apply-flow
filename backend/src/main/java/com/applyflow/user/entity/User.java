@@ -88,6 +88,10 @@ public class User extends BaseEntity implements UserDetails {
         this.displayName = displayName;
     }
 
+    public void updatePasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
     public boolean isNotifyReminderEmail() {
         return notifyReminderEmail;
     }

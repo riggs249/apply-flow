@@ -80,6 +80,10 @@ public class TokenService {
         findUsable(rawToken).revoke();
     }
 
+    public void revokeAllForUser(UUID userId) {
+        refreshTokenRepository.revokeAllActiveForUser(userId, Instant.now());
+    }
+
     private String hash(String token) {
         try {
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")

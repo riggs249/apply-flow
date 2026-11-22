@@ -1,11 +1,13 @@
 package com.applyflow.auth.controller;
 
 import com.applyflow.auth.dto.AuthResponse;
+import com.applyflow.auth.dto.ForgotPasswordRequest;
 import com.applyflow.auth.dto.LoginRequest;
 import com.applyflow.auth.dto.MessageResponse;
 import com.applyflow.auth.dto.RefreshRequest;
 import com.applyflow.auth.dto.RegisterRequest;
 import com.applyflow.auth.dto.ResendVerificationRequest;
+import com.applyflow.auth.dto.ResetPasswordRequest;
 import com.applyflow.auth.dto.VerifyEmailRequest;
 import com.applyflow.auth.service.AuthService;
 import jakarta.validation.Valid;
@@ -44,6 +46,16 @@ public class AuthController {
     @PostMapping("/resend-verification")
     public MessageResponse resendVerification(@Valid @RequestBody ResendVerificationRequest request) {
         return authService.resendVerification(request);
+    }
+
+    @PostMapping("/forgot-password")
+    public MessageResponse forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        return authService.forgotPassword(request);
+    }
+
+    @PostMapping("/reset-password")
+    public MessageResponse resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        return authService.resetPassword(request);
     }
 
     @PostMapping("/refresh")

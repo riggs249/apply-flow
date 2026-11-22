@@ -32,7 +32,10 @@ import { AuthService } from '../../core/auth/auth.service';
           <label class="mt-[.55rem]" for="email">Email address</label>
           <input class="!px-[.8rem] !py-3 !text-[.84rem]" id="email" type="email" formControlName="email" autocomplete="email" placeholder="you@example.com" />
           @if (form.controls.email.touched && form.controls.email.invalid) { <small class="!text-[.72rem]">Enter a valid email address.</small> }
-          <label class="mt-[.55rem]" for="password">Password</label>
+          <div class="mt-[.55rem] flex items-center justify-between gap-3">
+            <label class="!mb-0" for="password">Password</label>
+            <a class="text-[.72rem] font-semibold text-af-accent no-underline" routerLink="/forgot-password">Forgot password?</a>
+          </div>
           <input class="!px-[.8rem] !py-3 !text-[.84rem]" id="password" type="password" formControlName="password" autocomplete="current-password" placeholder="Your password" />
           @if (form.controls.password.touched && form.controls.password.invalid) { <small class="!text-[.72rem]">Password is required.</small> }
           <button type="submit" class="primary-button mt-4 w-full justify-center !p-[.78rem]" [disabled]="loading">

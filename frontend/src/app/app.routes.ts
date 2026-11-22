@@ -7,6 +7,8 @@ import { LoginPageComponent } from './features/auth/login-page.component';
 import { RegisterPageComponent } from './features/auth/register-page.component';
 import { CheckEmailPageComponent } from './features/auth/check-email-page.component';
 import { VerifyEmailPageComponent } from './features/auth/verify-email-page.component';
+import { ForgotPasswordPageComponent } from './features/auth/forgot-password-page.component';
+import { ResetPasswordPageComponent } from './features/auth/reset-password-page.component';
 import { ApplicationListPageComponent } from './features/applications/application-list-page.component';
 import { ApplicationFormPageComponent } from './features/applications/application-form-page.component';
 import { ApplicationDetailPageComponent } from './features/applications/application-detail-page.component';
@@ -22,6 +24,9 @@ export const routes: Routes = [
   { path: 'login', component: LoginPageComponent, canActivate: [guestGuard], title: 'Sign in · HanapTracker' },
   { path: 'register', component: RegisterPageComponent, canActivate: [guestGuard], title: 'Create account · HanapTracker' },
   { path: 'check-email', component: CheckEmailPageComponent, canActivate: [guestGuard], title: 'Verify email · HanapTracker' },
+  { path: 'forgot-password', component: ForgotPasswordPageComponent, canActivate: [guestGuard], title: 'Forgot password · HanapTracker' },
+  { path: 'reset-password/:token', component: ResetPasswordPageComponent, canActivate: [guestGuard], title: 'Reset password · HanapTracker' },
+  { path: 'reset-password', component: ResetPasswordPageComponent, canActivate: [guestGuard], title: 'Reset password · HanapTracker' },
   { path: 'v/:token', component: VerifyEmailPageComponent, title: 'Verify email · HanapTracker' },
   { path: 'verify-email', component: VerifyEmailPageComponent, title: 'Verify email · HanapTracker' },
   {

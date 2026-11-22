@@ -1,5 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { finalize } from 'rxjs/operators';
@@ -61,6 +61,38 @@ import { NotificationToggleRowComponent } from './notification-toggle-row.compon
           </label>
           <button class="primary-button" type="submit">{{ saved ? 'Saved' : 'Save preferences' }}</button>
         </form>
+
+        <div class="mt-5 border-t border-af-divider pt-4">
+          <div class="panel-heading mb-3">
+            <div>
+              <h2>Change password</h2>
+              <p>Use at least 8 characters. Other sessions will be signed out.</p>
+            </div>
+          </div>
+          @if (passwordError) {
+            <div class="mb-3 rounded-af-sm border border-af-danger-border bg-af-danger-soft p-[.7rem] text-[.78rem] text-af-danger">{{ passwordError }}</div>
+          }
+          @if (passwordSaved) {
+            <div class="mb-3 rounded-af-sm border border-af-border bg-af-accent-soft p-[.7rem] text-[.78rem] text-af-success-deep">Password updated.</div>
+          }
+          <form [formGroup]="passwordForm" (ngSubmit)="savePassword()">
+            <label class="mb-3" for="currentPassword">Current password
+              <input id="currentPassword" type="password" formControlName="currentPassword" autocomplete="current-password" />
+            </label>
+            <label class="mb-3" for="newPassword">New password
+              <input id="newPassword" type="password" formControlName="newPassword" autocomplete="new-password" />
+            </label>
+            <label class="mb-4" for="confirmNewPassword">Confirm new password
+              <input id="confirmNewPassword" type="password" formControlName="confirmNewPassword" autocomplete="new-password" />
+            </label>
+            @if (passwordForm.controls.confirmNewPassword.touched && passwordForm.hasError('mismatch')) {
+              <p class="m-0 mb-3 text-[.72rem] text-af-danger">Passwords do not match.</p>
+            }
+            <button class="primary-button" type="submit" [disabled]="passwordForm.invalid || passwordSaving">
+              {{ passwordSaving ? 'Updating…' : 'Update password' }}
+            </button>
+          </form>
+        </div>
       </article>
 
       <article class="panel">
@@ -135,6 +167,11 @@ export class SettingsPageComponent implements OnInit {
   readonly profileForm = this.fb.nonNullable.group({
     displayName: ['', [Validators.required, Validators.maxLength(100)]],
   });
+  readonly passwordForm = this.fb.nonNullable.group({
+    currentPassword: ['', Validators.required],
+    newPassword: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(72)]],
+    confirmNewPassword: ['', Validators.required],
+  }, { validators: passwordsMatchValidator });
   readonly notificationForm = this.fb.nonNullable.group({
     reminderEmail: true,
     interviewEmail: true,
@@ -146,6 +183,9 @@ export class SettingsPageComponent implements OnInit {
   profileSaving = false;
   profileSaved = false;
   profileError = '';
+  passwordSaving = false;
+  passwordSaved = false;
+  passwordError = '';
   notificationsLoading = true;
   notificationsSaving = false;
   notificationsSaved = false;
@@ -210,6 +250,33 @@ export class SettingsPageComponent implements OnInit {
     });
   }
 
+  savePassword(): void {
+    this.passwordForm.markAllAsTouched();
+    if (this.passwordForm.invalid) {
+      return;
+    }
+    this.passwordSaving = true;
+    this.passwordError = '';
+    this.passwordSaved = false;
+    const { currentPassword, newPassword } = this.passwordForm.getRawValue();
+    this.auth.changePassword(currentPassword, newPassword).pipe(
+      finalize(() => { this.passwordSaving = false; }),
+    ).subscribe({
+      next: () => {
+        this.passwordForm.reset({
+          currentPassword: '',
+          newPassword: '',
+          confirmNewPassword: '',
+        });
+        this.passwordSaved = true;
+        setTimeout(() => { this.passwordSaved = false; }, 2000);
+      },
+      error: err => {
+        this.passwordError = err?.error?.message || 'Could not update your password.';
+      },
+    });
+  }
+
   savePreferences(): void {
     this.preferences.setApplicationsPageSize(this.form.controls.pageSize.value);
     this.saved = true;
@@ -250,4 +317,11 @@ export class SettingsPageComponent implements OnInit {
       });
     });
   }
+}
+
+function passwordsMatchValidator(group: AbstractControl): ValidationErrors | null {
+  const password = group.get('newPassword')?.value;
+  const confirm = group.get('confirmNewPassword')?.value;
+  if (!password || !confirm) return null;
+  return password === confirm ? null : { mismatch: true };
 }

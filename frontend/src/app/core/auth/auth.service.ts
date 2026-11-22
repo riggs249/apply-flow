@@ -134,6 +134,24 @@ export class AuthService {
     );
   }
 
+  forgotPassword(email: string) {
+    return this.http.post<MessageResponse>(`${environment.apiUrl}/auth/forgot-password`, { email });
+  }
+
+  resetPassword(token: string, newPassword: string) {
+    return this.http.post<MessageResponse>(`${environment.apiUrl}/auth/reset-password`, {
+      token,
+      newPassword,
+    });
+  }
+
+  changePassword(currentPassword: string, newPassword: string) {
+    return this.http.put<MessageResponse>(`${environment.apiUrl}/me/password`, {
+      currentPassword,
+      newPassword,
+    });
+  }
+
   private applySession(response: AuthResponse): void {
     this.accessToken.set(response.accessToken);
     this.refreshToken = response.refreshToken;
