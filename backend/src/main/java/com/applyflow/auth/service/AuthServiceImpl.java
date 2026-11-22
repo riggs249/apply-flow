@@ -10,6 +10,7 @@ import com.applyflow.auth.dto.VerifyEmailRequest;
 import com.applyflow.auth.entity.EmailVerificationToken;
 import com.applyflow.auth.entity.RefreshToken;
 import com.applyflow.auth.repository.EmailVerificationTokenRepository;
+import com.applyflow.notification.NotificationEmailMessage;
 import com.applyflow.user.entity.User;
 import com.applyflow.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +28,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -151,7 +153,18 @@ public class AuthServiceImpl implements AuthService {
                 Instant.now().plus(verificationTokenHours, ChronoUnit.HOURS)
         ));
         String verificationUrl = frontendUrl + "/v/" + rawToken;
-        emailService.sendVerificationEmail(user.getEmail(), user.getDisplayName(), verificationUrl);
+        emailService.send(new NotificationEmailMessage(
+                user.getEmail(),
+                user.getDisplayName(),
+                "Verify your HanapTracker email",
+                "Welcome",
+                "Confirm your email address",
+                "Thanks for creating a HanapTracker account. Verify your email to start tracking applications.",
+                List.of(),
+                verificationUrl,
+                "Verify email",
+                "This link expires in 24 hours. If you did not create an account, you can ignore this message."
+        ));
     }
 
     private String newShortToken() {

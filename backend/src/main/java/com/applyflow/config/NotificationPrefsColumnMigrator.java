@@ -27,11 +27,25 @@ public class NotificationPrefsColumnMigrator implements ApplicationRunner {
         ensureBooleanColumn("notify_interview_email", true);
         ensureBooleanColumn("notify_assessment_email", true);
         ensureBooleanColumn("notify_outcome_email", true);
+        ensureLeadEmailColumns("reminders");
+        ensureLeadEmailColumns("interviews");
+        ensureLeadEmailColumns("assessments");
+        log.info("Ensured notification preference columns and lead-email timestamps");
+    }
+
+    private void ensureLeadEmailColumns(String table) {
         jdbcTemplate.execute("""
-                ALTER TABLE reminders
+                ALTER TABLE %s
                 ADD COLUMN IF NOT EXISTS emailed_at timestamptz
-                """);
-        log.info("Ensured notification preference columns and reminders.emailed_at");
+                """.formatted(table));
+        jdbcTemplate.execute("""
+                ALTER TABLE %s
+                ADD COLUMN IF NOT EXISTS emailed_24h_at timestamptz
+                """.formatted(table));
+        jdbcTemplate.execute("""
+                ALTER TABLE %s
+                ADD COLUMN IF NOT EXISTS emailed_1h_at timestamptz
+                """.formatted(table));
     }
 
     private void ensureBooleanColumn(String column, boolean defaultValue) {

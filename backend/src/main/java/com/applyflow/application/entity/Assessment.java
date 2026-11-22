@@ -1,7 +1,9 @@
 package com.applyflow.application.entity;
 
 import com.applyflow.common.persistence.BaseEntity;
+import com.applyflow.notification.LeadEmailMarks;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -11,6 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.Objects;
 
 @Entity
 @Table(name = "assessments")
@@ -48,6 +51,9 @@ public class Assessment extends BaseEntity {
     @Column(columnDefinition = "text")
     private String notes;
 
+    @Embedded
+    private LeadEmailMarks leadEmails = new LeadEmailMarks();
+
     protected Assessment() {
     }
 
@@ -63,10 +69,14 @@ public class Assessment extends BaseEntity {
         this.result = result;
         this.notes = notes;
         this.completedAt = status == AssessmentStatus.COMPLETED ? Instant.now() : null;
+        this.leadEmails = new LeadEmailMarks();
     }
 
     public void update(String title, String assessmentType, String instructions, String linkUrl, Instant dueAt,
                        AssessmentStatus status, String result, String notes) {
+        if (!Objects.equals(this.dueAt, dueAt)) {
+            leadEmails().clear();
+        }
         this.title = title;
         this.assessmentType = assessmentType;
         this.instructions = instructions;
@@ -82,6 +92,13 @@ public class Assessment extends BaseEntity {
         } else {
             this.completedAt = null;
         }
+    }
+
+    public LeadEmailMarks leadEmails() {
+        if (leadEmails == null) {
+            leadEmails = new LeadEmailMarks();
+        }
+        return leadEmails;
     }
 
     public JobApplication getApplication() { return application; }

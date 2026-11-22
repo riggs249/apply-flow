@@ -7,11 +7,18 @@ import { AuthService } from '../../core/auth/auth.service';
 import { PreferencesService } from '../../core/preferences/preferences.service';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { NotificationSettingsService } from './notification-settings.service';
+import { NotificationToggleRowComponent } from './notification-toggle-row.component';
 
 @Component({
   selector: 'app-settings-page',
   standalone: true,
-  imports: [ReactiveFormsModule, MatIconModule, PageHeaderComponent, RouterLink],
+  imports: [
+    ReactiveFormsModule,
+    MatIconModule,
+    PageHeaderComponent,
+    RouterLink,
+    NotificationToggleRowComponent,
+  ],
   template: `
     <app-page-header title="Settings" description="Manage your profile and application preferences." />
 
@@ -22,7 +29,7 @@ import { NotificationSettingsService } from './notification-settings.service';
           <span class="flex size-10 items-center justify-center rounded-full bg-af-accent-soft text-[.75rem] font-bold text-af-accent">{{ user()?.initials || 'U' }}</span>
           <div>
             <strong class="block text-[.9rem] text-af-text">{{ user()?.displayName || 'Signed in' }}</strong>
-            <small class="mt-[.2rem] block !text-[.75rem] !text-af-text-faint">{{ user()?.email || 'Email unavailable' }}</small>
+            <span class="mt-[.2rem] block text-[.75rem] text-af-text-faint">{{ user()?.email || 'Email unavailable' }}</span>
           </div>
         </div>
         <p class="m-0 mt-4 text-[.75rem] text-af-text-faint">Display name comes from your account. Profile editing is not available from the API yet.</p>
@@ -42,56 +49,52 @@ import { NotificationSettingsService } from './notification-settings.service';
         </form>
       </article>
 
-      <article class="panel col-span-full max-[800px]:col-auto">
-        <div class="panel-heading mb-[1.1rem]">
-          <h2>Email notifications</h2>
-          <p>Defaults are on. Emails only send after your address is verified.</p>
+      <article class="panel">
+        <div class="panel-heading mb-3">
+          <div>
+            <h2>Email notifications</h2>
+            <p>24h, 1h, and due emails. Verified email required.</p>
+          </div>
         </div>
+
         @if (notificationError) {
-          <div class="mb-4 rounded-af-sm border border-af-danger-border bg-af-danger-soft p-[.7rem] text-[.78rem] text-af-danger">{{ notificationError }}</div>
+          <div class="mb-2 rounded-af-sm border border-af-danger-border bg-af-danger-soft px-2.5 py-2 text-[.74rem] text-af-danger">{{ notificationError }}</div>
         }
+
         @if (notificationsLoading) {
-          <p class="m-0 text-[.82rem] text-af-text-muted">Loading notification settings…</p>
+          <p class="m-0 text-[.78rem] text-af-text-muted">Loading notification settings…</p>
         } @else {
-          <form class="flex flex-col gap-3" [formGroup]="notificationForm" (ngSubmit)="saveNotifications()">
-            <label class="!mb-0 flex cursor-pointer items-start gap-3 !font-normal">
-              <input class="mt-[.2rem] size-4 accent-[var(--af-accent)]" type="checkbox" formControlName="reminderEmail" />
-              <span>
-                <strong class="block text-[.86rem] text-af-text">Due reminders</strong>
-                <small class="mt-[.15rem] block !text-[.74rem] !text-af-text-faint">Interview, assessment, application deadline, and follow-up reminders</small>
-              </span>
-            </label>
-            <label class="!mb-0 flex cursor-pointer items-start gap-3 !font-normal">
-              <input class="mt-[.2rem] size-4 accent-[var(--af-accent)]" type="checkbox" formControlName="interviewEmail" />
-              <span>
-                <strong class="block text-[.86rem] text-af-text">Interview scheduled</strong>
-                <small class="mt-[.15rem] block !text-[.74rem] !text-af-text-faint">When you add a new interview</small>
-              </span>
-            </label>
-            <label class="!mb-0 flex cursor-pointer items-start gap-3 !font-normal">
-              <input class="mt-[.2rem] size-4 accent-[var(--af-accent)]" type="checkbox" formControlName="assessmentEmail" />
-              <span>
-                <strong class="block text-[.86rem] text-af-text">Assessment added</strong>
-                <small class="mt-[.15rem] block !text-[.74rem] !text-af-text-faint">When you add a new assessment</small>
-              </span>
-            </label>
-            <label class="!mb-0 flex cursor-pointer items-start gap-3 !font-normal">
-              <input class="mt-[.2rem] size-4 accent-[var(--af-accent)]" type="checkbox" formControlName="outcomeEmail" />
-              <span>
-                <strong class="block text-[.86rem] text-af-text">Application outcomes</strong>
-                <small class="mt-[.15rem] block !text-[.74rem] !text-af-text-faint">When status changes to Hired or Rejected</small>
-              </span>
-            </label>
-            <div class="mt-2">
-              <button class="primary-button" type="submit" [disabled]="notificationsSaving">
-                {{ notificationsSaved ? 'Saved' : (notificationsSaving ? 'Saving…' : 'Save email settings') }}
-              </button>
+          <form class="text-left" [formGroup]="notificationForm" (ngSubmit)="saveNotifications()">
+            <div class="mb-3 grid grid-cols-2 gap-x-4 gap-y-1 max-[520px]:grid-cols-1">
+              <app-notification-toggle-row
+                [control]="reminderControl"
+                title="Reminders"
+                description="Follow-ups and deadlines you create"
+              />
+              <app-notification-toggle-row
+                [control]="interviewControl"
+                title="Interviews"
+                description="Scheduled + lead-up notices"
+              />
+              <app-notification-toggle-row
+                [control]="assessmentControl"
+                title="Assessments"
+                description="Added + lead-up notices"
+              />
+              <app-notification-toggle-row
+                [control]="outcomeControl"
+                title="Outcomes"
+                description="Hired or Rejected updates"
+              />
             </div>
+            <button class="primary-button" type="submit" [disabled]="notificationsSaving">
+              {{ notificationsSaved ? 'Saved' : (notificationsSaving ? 'Saving…' : 'Save') }}
+            </button>
           </form>
         }
       </article>
 
-      <article class="panel col-span-full max-[800px]:col-auto">
+      <article class="panel">
         <div class="panel-heading mb-[1.1rem]"><h2>Workspace</h2><p>Quick links and session controls.</p></div>
         <div class="flex flex-wrap gap-[.7rem]">
           <a class="secondary-button" routerLink="/companies"><mat-icon>business</mat-icon> Manage companies</a>
@@ -126,6 +129,22 @@ export class SettingsPageComponent implements OnInit {
   notificationsSaving = false;
   notificationsSaved = false;
   notificationError = '';
+
+  get reminderControl() {
+    return this.notificationForm.controls.reminderEmail;
+  }
+
+  get interviewControl() {
+    return this.notificationForm.controls.interviewEmail;
+  }
+
+  get assessmentControl() {
+    return this.notificationForm.controls.assessmentEmail;
+  }
+
+  get outcomeControl() {
+    return this.notificationForm.controls.outcomeEmail;
+  }
 
   ngOnInit(): void {
     this.notifications.get().subscribe({
