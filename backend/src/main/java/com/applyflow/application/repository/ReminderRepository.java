@@ -25,6 +25,17 @@ public interface ReminderRepository extends JpaRepository<Reminder, UUID> {
 
     @Query("""
             select r from Reminder r
+            left join fetch r.application application
+            left join fetch application.company
+            where r.user.id = :userId
+              and application.id = :applicationId
+            order by r.remindAt asc
+            """)
+    List<Reminder> findOwnedByApplicationId(@Param("userId") UUID userId,
+                                            @Param("applicationId") UUID applicationId);
+
+    @Query("""
+            select r from Reminder r
             where r.id = :reminderId and r.user.id = :userId
             """)
     Optional<Reminder> findOwned(@Param("userId") UUID userId, @Param("reminderId") UUID reminderId);

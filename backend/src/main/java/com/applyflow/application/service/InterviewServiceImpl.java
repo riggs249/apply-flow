@@ -42,6 +42,15 @@ public class InterviewServiceImpl implements InterviewService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<InterviewResponse> findByApplicationId(UUID userId, UUID applicationId) {
+        getApplication(userId, applicationId);
+        return interviewRepository.findOwnedByApplicationId(userId, applicationId).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public InterviewResponse findById(UUID userId, UUID interviewId) {
         return toResponse(getOwned(userId, interviewId));
     }

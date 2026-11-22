@@ -2,7 +2,10 @@ package com.applyflow.application.controller;
 
 import com.applyflow.application.dto.*;
 import com.applyflow.application.entity.*;
+import com.applyflow.application.service.AssessmentService;
+import com.applyflow.application.service.InterviewService;
 import com.applyflow.application.service.JobApplicationService;
+import com.applyflow.application.service.ReminderService;
 import com.applyflow.common.dto.PageResponse;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.PageRequest;
@@ -15,15 +18,27 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/applications")
 public class JobApplicationController {
     private final JobApplicationService service;
+    private final InterviewService interviewService;
+    private final AssessmentService assessmentService;
+    private final ReminderService reminderService;
 
-    public JobApplicationController(JobApplicationService service) {
+    public JobApplicationController(
+            JobApplicationService service,
+            InterviewService interviewService,
+            AssessmentService assessmentService,
+            ReminderService reminderService
+    ) {
         this.service = service;
+        this.interviewService = interviewService;
+        this.assessmentService = assessmentService;
+        this.reminderService = reminderService;
     }
 
     @GetMapping
@@ -71,9 +86,27 @@ public class JobApplicationController {
     }
 
     @GetMapping("/{applicationId}/activities")
-    public java.util.List<ApplicationActivityResponse> findActivities(Authentication authentication,
-                                                                        @PathVariable UUID applicationId) {
+    public List<ApplicationActivityResponse> findActivities(Authentication authentication,
+                                                            @PathVariable UUID applicationId) {
         return service.findActivities(userId(authentication), applicationId);
+    }
+
+    @GetMapping("/{applicationId}/interviews")
+    public List<InterviewResponse> findInterviews(Authentication authentication,
+                                                  @PathVariable UUID applicationId) {
+        return interviewService.findByApplicationId(userId(authentication), applicationId);
+    }
+
+    @GetMapping("/{applicationId}/assessments")
+    public List<AssessmentResponse> findAssessments(Authentication authentication,
+                                                    @PathVariable UUID applicationId) {
+        return assessmentService.findByApplicationId(userId(authentication), applicationId);
+    }
+
+    @GetMapping("/{applicationId}/reminders")
+    public List<ReminderResponse> findReminders(Authentication authentication,
+                                                @PathVariable UUID applicationId) {
+        return reminderService.findByApplicationId(userId(authentication), applicationId);
     }
 
     @DeleteMapping("/{applicationId}")

@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public interface InterviewService {
     List<InterviewResponse> findAll(UUID userId);
+    List<InterviewResponse> findByApplicationId(UUID userId, UUID applicationId);
     InterviewResponse findById(UUID userId, UUID interviewId);
     InterviewResponse create(UUID userId, InterviewCreateRequest request);
     InterviewResponse update(UUID userId, UUID interviewId, InterviewUpdateRequest request);

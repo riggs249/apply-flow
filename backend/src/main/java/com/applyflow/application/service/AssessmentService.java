@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public interface AssessmentService {
     List<AssessmentResponse> findAll(UUID userId);
+    List<AssessmentResponse> findByApplicationId(UUID userId, UUID applicationId);
     AssessmentResponse findById(UUID userId, UUID assessmentId);
     AssessmentResponse create(UUID userId, AssessmentCreateRequest request);
     AssessmentResponse update(UUID userId, UUID assessmentId, AssessmentUpdateRequest request);

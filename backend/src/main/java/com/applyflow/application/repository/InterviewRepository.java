@@ -48,6 +48,17 @@ public interface InterviewRepository extends JpaRepository<Interview, UUID> {
 
     @Query("""
             select i from Interview i
+            join fetch i.application a
+            join fetch a.company
+            where a.user.id = :userId
+              and a.id = :applicationId
+            order by i.scheduledAt asc
+            """)
+    List<Interview> findOwnedByApplicationId(@Param("userId") UUID userId,
+                                             @Param("applicationId") UUID applicationId);
+
+    @Query("""
+            select i from Interview i
             where i.id = :interviewId and i.application.user.id = :userId
             """)
     Optional<Interview> findOwned(@Param("userId") UUID userId, @Param("interviewId") UUID interviewId);

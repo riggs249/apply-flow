@@ -2,6 +2,8 @@ import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { ApplicationService } from './application.service';
 import { ApplicationActivity, ApplicationRecord } from './application.models';
 import { DatePipe } from '@angular/common';
@@ -9,6 +11,9 @@ import { PageHeaderComponent } from '../../shared/components/page-header/page-he
 import { LoadingStateComponent } from '../../shared/components/loading-state/loading-state.component';
 import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { ResumeService } from '../resumes/resume.service';
+import { InterviewRecord } from '../interviews/interview.models';
+import { AssessmentRecord } from '../assessments/assessment.models';
+import { ReminderRecord } from '../reminders/reminder.models';
 
 @Component({
   selector: 'app-application-detail-page',
@@ -123,6 +128,95 @@ import { ResumeService } from '../resumes/resume.service';
         }
       </section>
 
+      <section class="mt-3 grid grid-cols-3 gap-3 max-[900px]:grid-cols-1">
+        <article class="panel !p-4">
+          <div class="mb-2.5 flex items-center justify-between gap-2">
+            <h2 class="m-0 text-[.92rem] text-af-text">Interviews</h2>
+            <a class="text-button !p-0 !text-[.72rem] !font-semibold" routerLink="/interviews">Manage</a>
+          </div>
+          @if (relatedLoading) {
+            <p class="m-0 text-[.78rem] text-af-text-faint">Loading…</p>
+          } @else if (!interviews.length) {
+            <p class="m-0 text-[.78rem] text-af-text-faint">No interviews linked yet.</p>
+          } @else {
+            <ul class="m-0 list-none p-0">
+              @for (item of interviews; track item.id) {
+                <li class="py-2 not-first:border-t not-first:border-af-divider">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <strong class="block truncate text-[.78rem] font-[550] text-af-text-secondary">{{ item.interviewType }}</strong>
+                      <time class="mt-[.2rem] block text-[.68rem] text-af-text-faint">{{ item.scheduledAt | date:'MMM d, y, h:mm a' }}</time>
+                    </div>
+                    <span class="shrink-0 rounded-af-sm px-[.45rem] py-[.2rem] text-[.62rem] font-bold" [class]="outcomeClass(item.outcome)">{{ label(item.outcome) }}</span>
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </article>
+
+        <article class="panel !p-4">
+          <div class="mb-2.5 flex items-center justify-between gap-2">
+            <h2 class="m-0 text-[.92rem] text-af-text">Assessments</h2>
+            <a class="text-button !p-0 !text-[.72rem] !font-semibold" routerLink="/assessments">Manage</a>
+          </div>
+          @if (relatedLoading) {
+            <p class="m-0 text-[.78rem] text-af-text-faint">Loading…</p>
+          } @else if (!assessments.length) {
+            <p class="m-0 text-[.78rem] text-af-text-faint">No assessments linked yet.</p>
+          } @else {
+            <ul class="m-0 list-none p-0">
+              @for (item of assessments; track item.id) {
+                <li class="py-2 not-first:border-t not-first:border-af-divider">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <strong class="block truncate text-[.78rem] font-[550] text-af-text-secondary">{{ item.title }}</strong>
+                      <span class="mt-[.2rem] block text-[.68rem] text-af-text-faint">
+                        {{ item.assessmentType }}
+                        @if (item.dueAt) { · due {{ item.dueAt | date:'MMM d, y' }} }
+                      </span>
+                    </div>
+                    <span class="shrink-0 rounded-af-sm px-[.45rem] py-[.2rem] text-[.62rem] font-bold" [class]="statusClass(item.status)">{{ label(item.status) }}</span>
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </article>
+
+        <article class="panel !p-4">
+          <div class="mb-2.5 flex items-center justify-between gap-2">
+            <h2 class="m-0 text-[.92rem] text-af-text">Reminders</h2>
+            <a class="text-button !p-0 !text-[.72rem] !font-semibold" routerLink="/reminders">Manage</a>
+          </div>
+          @if (relatedLoading) {
+            <p class="m-0 text-[.78rem] text-af-text-faint">Loading…</p>
+          } @else if (!reminders.length) {
+            <p class="m-0 text-[.78rem] text-af-text-faint">No reminders linked yet.</p>
+          } @else {
+            <ul class="m-0 list-none p-0">
+              @for (item of reminders; track item.id) {
+                <li class="py-2 not-first:border-t not-first:border-af-divider">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <strong class="block truncate text-[.78rem] font-[550] text-af-text-secondary">{{ item.title }}</strong>
+                      <time class="mt-[.2rem] block text-[.68rem] text-af-text-faint">{{ item.remindAt | date:'MMM d, y, h:mm a' }}</time>
+                    </div>
+                    <span
+                      class="shrink-0 rounded-af-sm px-[.45rem] py-[.2rem] text-[.62rem] font-bold"
+                      [class.text-af-danger]="item.timingState === 'OVERDUE'"
+                      [class.bg-af-danger-soft]="item.timingState === 'OVERDUE'"
+                      [class.text-af-accent]="item.timingState !== 'OVERDUE'"
+                      [class.bg-af-accent-soft]="item.timingState !== 'OVERDUE'"
+                    >{{ label(item.timingState) }}</span>
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </article>
+      </section>
+
       <section class="panel mt-3 !p-4">
         <h2 class="m-0 mb-2.5 text-[.92rem] text-af-text">Activity history</h2>
         @if (activitiesLoading) {
@@ -157,7 +251,11 @@ export class ApplicationDetailPageComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   application?: ApplicationRecord;
   activities: ApplicationActivity[] = [];
+  interviews: InterviewRecord[] = [];
+  assessments: AssessmentRecord[] = [];
+  reminders: ReminderRecord[] = [];
   activitiesLoading = true;
+  relatedLoading = true;
   loading = true;
   error = '';
   details: { label: string; value: string }[] = [];
@@ -186,15 +284,13 @@ export class ApplicationDetailPageComponent implements OnInit, OnDestroy {
           { label: 'Resume', value: resumeLabel },
         ];
         this.loading = false;
-        this.service.activities(id).subscribe({
-          next: items => { this.activities = items; this.activitiesLoading = false; },
-          error: () => this.activitiesLoading = false,
-        });
+        this.loadRelated(id);
       },
       error: () => {
         this.error = 'Application could not be loaded.';
         this.loading = false;
         this.activitiesLoading = false;
+        this.relatedLoading = false;
       },
     });
   }
@@ -244,5 +340,46 @@ export class ApplicationDetailPageComponent implements OnInit, OnDestroy {
 
   label(value: string): string {
     return value.toLowerCase().replaceAll('_', ' ').replace(/\b\w/g, char => char.toUpperCase());
+  }
+
+  outcomeClass(outcome: string): string {
+    switch (outcome) {
+      case 'PASSED': return 'bg-af-accent-soft text-af-accent';
+      case 'FAILED':
+      case 'CANCELLED': return 'bg-af-danger-soft text-af-danger';
+      case 'RESCHEDULED': return 'bg-af-border-soft text-af-text-muted';
+      default: return 'bg-af-border-soft text-af-text-secondary';
+    }
+  }
+
+  statusClass(status: string): string {
+    switch (status) {
+      case 'COMPLETED': return 'bg-af-accent-soft text-af-accent';
+      case 'EXPIRED': return 'bg-af-danger-soft text-af-danger';
+      case 'IN_PROGRESS': return 'bg-af-border-soft text-af-text-secondary';
+      default: return 'bg-af-border-soft text-af-text-muted';
+    }
+  }
+
+  private loadRelated(id: string): void {
+    forkJoin({
+      activities: this.service.activities(id).pipe(catchError(() => of([] as ApplicationActivity[]))),
+      interviews: this.service.interviews(id).pipe(catchError(() => of([] as InterviewRecord[]))),
+      assessments: this.service.assessments(id).pipe(catchError(() => of([] as AssessmentRecord[]))),
+      reminders: this.service.reminders(id).pipe(catchError(() => of([] as ReminderRecord[]))),
+    }).subscribe({
+      next: result => {
+        this.activities = result.activities;
+        this.interviews = result.interviews;
+        this.assessments = result.assessments;
+        this.reminders = result.reminders;
+        this.activitiesLoading = false;
+        this.relatedLoading = false;
+      },
+      error: () => {
+        this.activitiesLoading = false;
+        this.relatedLoading = false;
+      },
+    });
   }
 }

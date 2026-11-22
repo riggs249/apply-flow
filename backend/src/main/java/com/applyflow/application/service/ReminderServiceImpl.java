@@ -41,6 +41,15 @@ public class ReminderServiceImpl implements ReminderService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<ReminderResponse> findByApplicationId(UUID userId, UUID applicationId) {
+        getApplication(userId, applicationId);
+        return reminderRepository.findOwnedByApplicationId(userId, applicationId).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public ReminderResponse findById(UUID userId, UUID reminderId) {
         return toResponse(getOwned(userId, reminderId));
     }

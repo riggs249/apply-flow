@@ -42,6 +42,15 @@ public class AssessmentServiceImpl implements AssessmentService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<AssessmentResponse> findByApplicationId(UUID userId, UUID applicationId) {
+        getApplication(userId, applicationId);
+        return assessmentRepository.findOwnedByApplicationId(userId, applicationId).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public AssessmentResponse findById(UUID userId, UUID assessmentId) {
         return toResponse(getOwned(userId, assessmentId));
     }

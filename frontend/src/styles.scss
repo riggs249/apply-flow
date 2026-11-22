@@ -55,6 +55,14 @@ $hanaptracker-theme: mat.define-theme((
   --af-danger-border: #fecdd3;
   --af-slate: #64748b;
   --af-slate-soft: #f1f5f9;
+  --af-stage-assessment: #b7791f;
+  --af-stage-assessment-soft: #fff6e8;
+  --af-stage-hr: #486581;
+  --af-stage-hr-soft: #eef3f7;
+  --af-stage-technical: #0f766e;
+  --af-stage-technical-soft: #e6f4f1;
+  --af-stage-final: #1d4ed8;
+  --af-stage-final-soft: #eff6ff;
 
   --af-radius-sm: 8px;
   --af-radius: 10px;
@@ -133,6 +141,155 @@ mat-icon {
 .cdk-drag-placeholder.pipeline-card > * {
   visibility: hidden;
 }
+
+.pipeline-card:has(.pipeline-card-stage.is-open) {
+  position: relative;
+  z-index: 5;
+}
+
+.pipeline-card-stage {
+  --stage-color: var(--af-stage-assessment);
+  --stage-soft: var(--af-stage-assessment-soft);
+  margin: 0.25rem 0 0;
+  max-width: 100%;
+  position: relative;
+  width: fit-content;
+  z-index: 1;
+}
+
+.pipeline-card-stage[data-stage='ASSESSMENT'] {
+  --stage-color: var(--af-stage-assessment);
+  --stage-soft: var(--af-stage-assessment-soft);
+}
+
+.pipeline-card-stage[data-stage='HR_INTERVIEW'] {
+  --stage-color: var(--af-stage-hr);
+  --stage-soft: var(--af-stage-hr-soft);
+}
+
+.pipeline-card-stage[data-stage='TECHNICAL_INTERVIEW'] {
+  --stage-color: var(--af-stage-technical);
+  --stage-soft: var(--af-stage-technical-soft);
+}
+
+.pipeline-card-stage[data-stage='FINAL_INTERVIEW'] {
+  --stage-color: var(--af-stage-final);
+  --stage-soft: var(--af-stage-final-soft);
+}
+
+.pipeline-card-stage__trigger {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--stage-color);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 650;
+  gap: 0.25rem;
+  line-height: 1.35;
+  margin: 0;
+  max-width: 100%;
+  min-height: 0;
+  outline: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.pipeline-card-stage__trigger::after {
+  border-color: var(--stage-color) transparent transparent;
+  border-style: solid;
+  border-width: 0.28rem 0.22rem 0;
+  content: '';
+  flex: none;
+  height: 0;
+  margin-top: 0.1rem;
+  width: 0;
+}
+
+.pipeline-card-stage.is-open .pipeline-card-stage__trigger::after {
+  margin-top: 0;
+  transform: rotate(180deg);
+}
+
+.pipeline-card-stage__trigger:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.pipeline-card-stage__menu {
+  background: var(--af-surface);
+  border: 1px solid var(--af-border);
+  border-radius: var(--af-radius-sm);
+  box-shadow: 0 8px 20px rgba(20, 27, 36, 0.12);
+  left: 0;
+  list-style: none;
+  margin: 0.25rem 0 0;
+  min-width: 8.5rem;
+  padding: 0.3rem;
+  position: absolute;
+  top: 100%;
+  z-index: 20;
+}
+
+.pipeline-card-stage__menu li {
+  margin: 0;
+}
+
+.pipeline-card-stage__option {
+  --option-color: var(--af-text-secondary);
+  --option-soft: var(--af-border-soft);
+  background: transparent;
+  border: 0;
+  border-radius: calc(var(--af-radius-sm) - 2px);
+  color: var(--option-color);
+  cursor: pointer;
+  display: block;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 0;
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+  width: 100%;
+}
+
+.pipeline-card-stage__option[data-stage='ASSESSMENT'] {
+  --option-color: var(--af-stage-assessment);
+  --option-soft: var(--af-stage-assessment-soft);
+}
+
+.pipeline-card-stage__option[data-stage='HR_INTERVIEW'] {
+  --option-color: var(--af-stage-hr);
+  --option-soft: var(--af-stage-hr-soft);
+}
+
+.pipeline-card-stage__option[data-stage='TECHNICAL_INTERVIEW'] {
+  --option-color: var(--af-stage-technical);
+  --option-soft: var(--af-stage-technical-soft);
+}
+
+.pipeline-card-stage__option[data-stage='FINAL_INTERVIEW'] {
+  --option-color: var(--af-stage-final);
+  --option-soft: var(--af-stage-final-soft);
+}
+
+.pipeline-card-stage__option:hover,
+.pipeline-card-stage__option.is-active {
+  background: var(--option-soft);
+  color: var(--option-color);
+}
+
+.pipeline-card-stage-label {
+  font-weight: 650;
+}
+
+.pipeline-card-stage-label[data-stage='ASSESSMENT'] { color: var(--af-stage-assessment); }
+.pipeline-card-stage-label[data-stage='HR_INTERVIEW'] { color: var(--af-stage-hr); }
+.pipeline-card-stage-label[data-stage='TECHNICAL_INTERVIEW'] { color: var(--af-stage-technical); }
+.pipeline-card-stage-label[data-stage='FINAL_INTERVIEW'] { color: var(--af-stage-final); }
 
 /* —— Shared primitives —— */
 

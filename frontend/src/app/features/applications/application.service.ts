@@ -1,6 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import { ApiService } from '../../core/http/api.service';
+import { AssessmentRecord } from '../assessments/assessment.models';
+import { InterviewRecord } from '../interviews/interview.models';
+import { ReminderRecord } from '../reminders/reminder.models';
 import { ApplicationActivity, ApplicationRecord, ApplicationStatus, CompanyOption, EmploymentType, PageResponse, ProcessStage, WorkArrangement } from './application.models';
 
 export interface ApplicationFilters {
@@ -46,6 +49,18 @@ export class ApplicationService {
 
   activities(id: string) {
     return this.api.get<ApplicationActivity[]>(`/applications/${id}/activities`);
+  }
+
+  interviews(id: string) {
+    return this.api.get<InterviewRecord[]>(`/applications/${id}/interviews`);
+  }
+
+  assessments(id: string) {
+    return this.api.get<AssessmentRecord[]>(`/applications/${id}/assessments`);
+  }
+
+  reminders(id: string) {
+    return this.api.get<ReminderRecord[]>(`/applications/${id}/reminders`);
   }
 
   delete(id: string) {

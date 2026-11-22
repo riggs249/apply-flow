@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, HostListener, OnInit, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { CdkDrag, CdkDragDrop, CdkDragPreview, CdkDropList, CdkDropListGroup, transferArrayItem } from '@angular/cdk/drag-drop';
 import { RouterLink } from '@angular/router';
@@ -71,8 +71,11 @@ interface BoardColumn {
                   <div *cdkDragPreview class="pipeline-card-preview">
                     <strong class="block text-[.8rem] text-af-text">{{ application.position }}</strong>
                     <span class="mt-[.3rem] block text-[.7rem] text-af-text-faint">{{ application.companyName }}</span>
-                    @if (application.status === 'IN_PROCESS' && application.processStage) {
-                      <span class="mt-[.3rem] block text-[.7rem] font-[650] text-af-amber">{{ label(application.processStage) }}</span>
+                    @if (application.status === 'IN_PROCESS') {
+                      <span
+                        class="pipeline-card-stage-label mt-[.3rem] block text-[.7rem]"
+                        [attr.data-stage]="application.processStage || 'ASSESSMENT'"
+                      >{{ stageLabel(application.processStage) }}</span>
                     }
                     @if (application.applicationDate) {
                       <time class="mt-[.3rem] block text-[.7rem] text-af-text-faint">{{ application.applicationDate | date:'MMM d, y' }}</time>
@@ -80,8 +83,43 @@ interface BoardColumn {
                   </div>
                   <strong class="block truncate text-[.78rem] text-af-text">{{ application.position }}</strong>
                   <span class="mt-[.25rem] block truncate text-[.68rem] text-af-text-faint">{{ application.companyName }}</span>
-                  @if (application.status === 'IN_PROCESS' && application.processStage) {
-                    <span class="mt-[.25rem] block truncate text-[.68rem] font-[650] text-af-amber">{{ label(application.processStage) }}</span>
+                  @if (column.status === 'IN_PROCESS') {
+                    <div
+                      class="pipeline-card-stage"
+                      [attr.data-stage]="application.processStage || 'ASSESSMENT'"
+                      [class.is-open]="openStageMenuId === application.id"
+                      [class.is-updating]="isStageUpdating(application.id)"
+                      (mousedown)="$event.stopPropagation()"
+                      (pointerdown)="$event.stopPropagation()"
+                      (click)="$event.preventDefault(); $event.stopPropagation()"
+                    >
+                      <button
+                        type="button"
+                        class="pipeline-card-stage__trigger"
+                        [attr.aria-expanded]="openStageMenuId === application.id"
+                        aria-haspopup="listbox"
+                        aria-label="Process stage"
+                        [disabled]="isStageUpdating(application.id)"
+                        (click)="toggleStageMenu(application.id, $event)"
+                      >
+                        <span>{{ stageLabel(application.processStage) }}</span>
+                      </button>
+                      @if (openStageMenuId === application.id) {
+                        <ul class="pipeline-card-stage__menu" role="listbox">
+                          @for (stage of processStages; track stage.value) {
+                            <li role="option" [attr.aria-selected]="(application.processStage || 'ASSESSMENT') === stage.value">
+                              <button
+                                type="button"
+                                class="pipeline-card-stage__option"
+                                [attr.data-stage]="stage.value"
+                                [class.is-active]="(application.processStage || 'ASSESSMENT') === stage.value"
+                                (click)="selectProcessStage(application, stage.value, $event)"
+                              >{{ stage.label }}</button>
+                            </li>
+                          }
+                        </ul>
+                      }
+                    </div>
                   }
                   @if (application.applicationDate) { <time class="mt-[.25rem] block text-[.68rem] text-af-text-faint">{{ application.applicationDate | date:'MMM d, y' }}</time> }
                 </a>
@@ -96,9 +134,22 @@ interface BoardColumn {
 export class ApplicationBoardPageComponent implements OnInit {
   private readonly service = inject(ApplicationService);
   readonly statuses: ApplicationStatus[] = ['WISHLIST', 'APPLIED', 'IN_PROCESS', 'REJECTED', 'HIRED', 'WITHDRAWN'];
+  readonly processStages: { value: ProcessStage; label: string }[] = [
+    { value: 'ASSESSMENT', label: 'Assessment' },
+    { value: 'HR_INTERVIEW', label: 'HR' },
+    { value: 'TECHNICAL_INTERVIEW', label: 'Technical' },
+    { value: 'FINAL_INTERVIEW', label: 'Final' },
+  ];
   columns: BoardColumn[] = this.statuses.map(status => ({ status, label: this.label(status), applications: [] }));
   loading = true;
   error = '';
+  openStageMenuId: string | null = null;
+  private readonly updatingStageIds = new Set<string>();
+
+  @HostListener('document:click')
+  closeStageMenus(): void {
+    this.openStageMenuId = null;
+  }
 
   private readonly markerColors: Record<ApplicationStatus, string> = {
     WISHLIST: 'bg-af-slate',
@@ -166,8 +217,50 @@ export class ApplicationBoardPageComponent implements OnInit {
     });
   }
 
+  isStageUpdating(applicationId: string): boolean {
+    return this.updatingStageIds.has(applicationId);
+  }
+
+  toggleStageMenu(applicationId: string, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.isStageUpdating(applicationId)) {
+      return;
+    }
+    this.openStageMenuId = this.openStageMenuId === applicationId ? null : applicationId;
+  }
+
+  selectProcessStage(application: ApplicationRecord, processStage: ProcessStage, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.openStageMenuId = null;
+    if ((application.processStage || 'ASSESSMENT') === processStage) {
+      return;
+    }
+    const previousStage = application.processStage ?? 'ASSESSMENT';
+    application.processStage = processStage;
+    this.updatingStageIds.add(application.id);
+    this.error = '';
+    this.service.changeStatus(application.id, 'IN_PROCESS', processStage).subscribe({
+      next: updated => {
+        application.processStage = updated.processStage ?? processStage;
+        this.updatingStageIds.delete(application.id);
+      },
+      error: () => {
+        application.processStage = previousStage;
+        this.updatingStageIds.delete(application.id);
+        this.error = 'That process stage change was rejected.';
+      },
+    });
+  }
+
   label(value: string): string {
     return value.toLowerCase().replaceAll('_', ' ').replace(/\b\w/g, char => char.toUpperCase());
+  }
+
+  stageLabel(stage: ProcessStage | null | undefined): string {
+    return this.processStages.find(item => item.value === stage)?.label
+      ?? this.processStages[0].label;
   }
 
   private loadAllApplications(page = 0, accumulated: ApplicationRecord[] = []): Observable<ApplicationRecord[]> {
