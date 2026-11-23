@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, HostListener, OnInit, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { CdkDrag, CdkDragDrop, CdkDragPreview, CdkDropList, CdkDropListGroup, transferArrayItem } from '@angular/cdk/drag-drop';
 import { RouterLink } from '@angular/router';
@@ -8,8 +8,9 @@ import { switchMap } from 'rxjs/operators';
 import { ApplicationService } from './application.service';
 import { ApplicationRecord, ApplicationStatus, PageResponse, ProcessStage } from './application.models';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { KanbanCardSkeletonComponent } from '../../shared/components/kanban-card-skeleton/kanban-card-skeleton.component';
 
-interface PipelineColumn {
+interface BoardColumn {
   status: ApplicationStatus;
   label: string;
   applications: ApplicationRecord[];
@@ -18,111 +19,163 @@ interface PipelineColumn {
 @Component({
   selector: 'app-application-board-page',
   standalone: true,
-  imports: [CdkDropListGroup, CdkDropList, CdkDrag, CdkDragPreview, RouterLink, MatIconModule, PageHeaderComponent, DatePipe],
+  imports: [
+    CdkDropListGroup,
+    CdkDropList,
+    CdkDrag,
+    CdkDragPreview,
+    RouterLink,
+    MatIconModule,
+    PageHeaderComponent,
+    DatePipe,
+    KanbanCardSkeletonComponent,
+  ],
   template: `
-    <app-page-header title="Application pipeline" description="Move opportunities through each stage of your job search.">
+    <app-page-header title="Kanban board" description="Move opportunities through each stage of your job search.">
       <a class="secondary-button" routerLink="/applications"><mat-icon>table_rows</mat-icon> List view</a>
     </app-page-header>
     @if (error) { <div class="error">{{ error }}</div> }
-    @if (loading) { <div class="state">Loading pipeline…</div> }
-    @else {
-      <section class="board" cdkDropListGroup>
-        @for (column of columns; track column.status) {
-          <article class="column">
-            <header><div><span class="column-marker" [class]="column.status.toLowerCase()"></span><h2>{{ column.label }}</h2></div><span class="count">{{ column.applications.length }}</span></header>
-            <div class="drop-zone" cdkDropList [cdkDropListData]="column.applications" (cdkDropListDropped)="drop($event, column.status)">
-              @for (application of column.applications; track application.id) {
-                <a class="application-card" cdkDrag [routerLink]="['/applications', application.id]">
-                  <div class="drag-preview" *cdkDragPreview>{{ application.position }}</div>
-                  <strong>{{ application.position }}</strong>
-                  <span>{{ application.companyName }}</span>
-                  @if (application.status === 'IN_PROCESS' && application.processStage) {
-                    <span class="stage">{{ label(application.processStage) }}</span>
-                  }
-                  @if (application.applicationDate) { <time>{{ application.applicationDate | date:'MMM d, y' }}</time> }
-                </a>
-              } @empty { <div class="empty-column">Drop applications here</div> }
+    <section
+      class="relative left-1/2 w-[min(100vw-6rem,1680px)] -translate-x-1/2 grid grid-cols-6 gap-[.55rem] pb-2 max-[980px]:w-[min(100vw-2rem,1680px)] max-[980px]:auto-cols-[minmax(180px,1fr)] max-[980px]:grid-flow-col max-[980px]:grid-cols-none max-[980px]:overflow-x-auto"
+      cdkDropListGroup
+    >
+      @for (column of columns; track column.status) {
+        <article class="flex min-h-[30rem] min-w-0 flex-col rounded-af-lg border border-af-border bg-[rgba(255,255,255,.55)] max-[980px]:min-w-[180px]">
+          <header class="flex items-center justify-between gap-1 px-[.65rem] py-[.75rem]">
+            <div class="flex min-w-0 items-center gap-[.35rem]">
+              <span class="size-2 shrink-0 rounded-full" [class]="markerClass(column.status)"></span>
+              <h2 class="m-0 truncate text-[.72rem] text-af-text-secondary">{{ column.label }}</h2>
             </div>
-          </article>
-        }
-      </section>
-    }
+            @if (loading) {
+              <span class="af-skeleton af-skeleton--header !w-6 !rounded-md"></span>
+            } @else {
+              <span class="shrink-0 rounded-md bg-af-border-soft px-[.35rem] py-[.15rem] text-center text-[.65rem] text-af-text-muted">{{ column.applications.length }}</span>
+            }
+          </header>
+          <div
+            class="min-h-0 flex-1 px-[.5rem] pb-[.55rem] pt-[.1rem]"
+            cdkDropList
+            [cdkDropListData]="column.applications"
+            [cdkDropListDisabled]="loading"
+            (cdkDropListDropped)="drop($event, column.status)"
+          >
+            @if (loading) {
+              <app-kanban-card-skeleton [count]="skeletonCount(column.status)" />
+            } @else {
+              @for (application of column.applications; track application.id) {
+                <a
+                  class="pipeline-card mb-[.5rem] block cursor-grab rounded-af border border-af-border bg-af-surface p-[.7rem] no-underline shadow-af active:cursor-grabbing"
+                  cdkDrag
+                  [routerLink]="['/applications', application.id]"
+                >
+                  <div *cdkDragPreview class="pipeline-card-preview">
+                    <strong class="block text-[.8rem] text-af-text">{{ application.position }}</strong>
+                    <span class="mt-[.3rem] block text-[.7rem] text-af-text-faint">{{ application.companyName }}</span>
+                    @if (application.status === 'IN_PROCESS') {
+                      <span
+                        class="pipeline-card-stage-label mt-[.3rem] block text-[.7rem]"
+                        [attr.data-stage]="application.processStage || 'ASSESSMENT'"
+                      >{{ stageLabel(application.processStage) }}</span>
+                    }
+                    @if (application.applicationDate) {
+                      <time class="mt-[.3rem] block text-[.7rem] text-af-text-faint">{{ application.applicationDate | date:'MMM d, y' }}</time>
+                    }
+                  </div>
+                  <strong class="block truncate text-[.78rem] text-af-text">{{ application.position }}</strong>
+                  <span class="mt-[.25rem] block truncate text-[.68rem] text-af-text-faint">{{ application.companyName }}</span>
+                  @if (column.status === 'IN_PROCESS') {
+                    <div
+                      class="pipeline-card-stage"
+                      [attr.data-stage]="application.processStage || 'ASSESSMENT'"
+                      [class.is-open]="openStageMenuId === application.id"
+                      [class.is-updating]="isStageUpdating(application.id)"
+                      (mousedown)="$event.stopPropagation()"
+                      (pointerdown)="$event.stopPropagation()"
+                      (click)="$event.preventDefault(); $event.stopPropagation()"
+                    >
+                      <button
+                        type="button"
+                        class="pipeline-card-stage__trigger"
+                        [attr.aria-expanded]="openStageMenuId === application.id"
+                        aria-haspopup="listbox"
+                        aria-label="Process stage"
+                        [disabled]="isStageUpdating(application.id)"
+                        (click)="toggleStageMenu(application.id, $event)"
+                      >
+                        <span>{{ stageLabel(application.processStage) }}</span>
+                      </button>
+                      @if (openStageMenuId === application.id) {
+                        <ul class="pipeline-card-stage__menu" role="listbox">
+                          @for (stage of processStages; track stage.value) {
+                            <li role="option" [attr.aria-selected]="(application.processStage || 'ASSESSMENT') === stage.value">
+                              <button
+                                type="button"
+                                class="pipeline-card-stage__option"
+                                [attr.data-stage]="stage.value"
+                                [class.is-active]="(application.processStage || 'ASSESSMENT') === stage.value"
+                                (click)="selectProcessStage(application, stage.value, $event)"
+                              >{{ stage.label }}</button>
+                            </li>
+                          }
+                        </ul>
+                      }
+                    </div>
+                  }
+                  @if (application.applicationDate) { <time class="mt-[.25rem] block text-[.68rem] text-af-text-faint">{{ application.applicationDate | date:'MMM d, y' }}</time> }
+                </a>
+              } @empty { <div class="mt-2 rounded-af-sm border border-dashed border-af-border px-2 py-4 text-center text-[.7rem] text-af-text-faint">Drop applications here</div> }
+            }
+          </div>
+        </article>
+      }
+    </section>
   `,
-  styles: [`
-    .board {
-      display: grid;
-      gap: .8rem;
-      grid-auto-columns: minmax(220px, 1fr);
-      grid-auto-flow: column;
-      overflow-x: auto;
-      padding-bottom: .5rem;
-    }
-    .column {
-      background: rgba(255, 255, 255, .55);
-      border: 1px solid var(--af-border);
-      border-radius: var(--af-radius-lg);
-      min-height: 30rem;
-      min-width: 220px;
-    }
-    header { align-items: center; display: flex; justify-content: space-between; padding: .9rem; }
-    header div { align-items: center; display: flex; gap: .45rem; }
-    h2 { color: var(--af-text-secondary); font-size: .78rem; margin: 0; }
-    .count {
-      background: var(--af-border-soft);
-      border-radius: 6px;
-      color: var(--af-text-muted);
-      font-size: .68rem;
-      min-width: 1.25rem;
-      padding: .2rem .4rem;
-      text-align: center;
-    }
-    .column-marker { background: var(--af-slate); border-radius: 50%; height: 8px; width: 8px; }
-    .column-marker.wishlist { background: var(--af-slate); }
-    .column-marker.applied { background: var(--af-accent); }
-    .column-marker.in_process { background: var(--af-amber-dot); }
-    .column-marker.hired { background: var(--af-success); }
-    .column-marker.rejected, .column-marker.withdrawn { background: var(--af-danger); }
-    .drop-zone { min-height: 26rem; padding: .15rem .65rem .65rem; }
-    .application-card {
-      background: var(--af-surface);
-      border: 1px solid var(--af-border);
-      border-radius: var(--af-radius);
-      box-shadow: var(--af-shadow);
-      cursor: grab;
-      display: block;
-      margin-bottom: .6rem;
-      padding: .8rem;
-      text-decoration: none;
-    }
-    .application-card:active { cursor: grabbing; }
-    .application-card strong, .application-card span, .application-card time { display: block; }
-    .application-card strong { color: var(--af-text); font-size: .8rem; }
-    .application-card span, .application-card time { color: var(--af-text-faint); font-size: .7rem; margin-top: .3rem; }
-    .application-card .stage { color: var(--af-amber); font-weight: 650; }
-    .empty-column {
-      border: 1px dashed var(--af-border);
-      border-radius: var(--af-radius-sm);
-      color: var(--af-text-faint);
-      font-size: .72rem;
-      margin-top: .5rem;
-      padding: 1rem .5rem;
-      text-align: center;
-    }
-    .drag-preview {
-      background: var(--af-sidebar-bg);
-      border-radius: 7px;
-      color: #fff;
-      font-size: .78rem;
-      padding: .6rem .8rem;
-    }
-  `],
 })
 export class ApplicationBoardPageComponent implements OnInit {
   private readonly service = inject(ApplicationService);
   readonly statuses: ApplicationStatus[] = ['WISHLIST', 'APPLIED', 'IN_PROCESS', 'REJECTED', 'HIRED', 'WITHDRAWN'];
-  columns: PipelineColumn[] = this.statuses.map(status => ({ status, label: this.label(status), applications: [] }));
+  readonly processStages: { value: ProcessStage; label: string }[] = [
+    { value: 'ASSESSMENT', label: 'Assessment' },
+    { value: 'HR_INTERVIEW', label: 'HR' },
+    { value: 'TECHNICAL_INTERVIEW', label: 'Technical' },
+    { value: 'FINAL_INTERVIEW', label: 'Final' },
+  ];
+  columns: BoardColumn[] = this.statuses.map(status => ({ status, label: this.label(status), applications: [] }));
   loading = true;
   error = '';
+  openStageMenuId: string | null = null;
+  private readonly updatingStageIds = new Set<string>();
+
+  @HostListener('document:click')
+  closeStageMenus(): void {
+    this.openStageMenuId = null;
+  }
+
+  private readonly markerColors: Record<ApplicationStatus, string> = {
+    WISHLIST: 'bg-af-slate',
+    APPLIED: 'bg-af-accent',
+    IN_PROCESS: 'bg-af-amber-dot',
+    HIRED: 'bg-af-success',
+    REJECTED: 'bg-af-danger',
+    WITHDRAWN: 'bg-af-danger',
+  };
+
+  private readonly skeletonCounts: Record<ApplicationStatus, number> = {
+    WISHLIST: 3,
+    APPLIED: 4,
+    IN_PROCESS: 3,
+    REJECTED: 2,
+    HIRED: 2,
+    WITHDRAWN: 2,
+  };
+
+  markerClass(status: ApplicationStatus): string {
+    return this.markerColors[status];
+  }
+
+  skeletonCount(status: ApplicationStatus): number {
+    return this.skeletonCounts[status];
+  }
 
   ngOnInit(): void {
     this.load();
@@ -139,7 +192,7 @@ export class ApplicationBoardPageComponent implements OnInit {
         this.loading = false;
       },
       error: () => {
-        this.error = 'The application pipeline could not be loaded.';
+        this.error = 'The kanban board could not be loaded.';
         this.loading = false;
       },
     });
@@ -164,8 +217,50 @@ export class ApplicationBoardPageComponent implements OnInit {
     });
   }
 
+  isStageUpdating(applicationId: string): boolean {
+    return this.updatingStageIds.has(applicationId);
+  }
+
+  toggleStageMenu(applicationId: string, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.isStageUpdating(applicationId)) {
+      return;
+    }
+    this.openStageMenuId = this.openStageMenuId === applicationId ? null : applicationId;
+  }
+
+  selectProcessStage(application: ApplicationRecord, processStage: ProcessStage, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.openStageMenuId = null;
+    if ((application.processStage || 'ASSESSMENT') === processStage) {
+      return;
+    }
+    const previousStage = application.processStage ?? 'ASSESSMENT';
+    application.processStage = processStage;
+    this.updatingStageIds.add(application.id);
+    this.error = '';
+    this.service.changeStatus(application.id, 'IN_PROCESS', processStage).subscribe({
+      next: updated => {
+        application.processStage = updated.processStage ?? processStage;
+        this.updatingStageIds.delete(application.id);
+      },
+      error: () => {
+        application.processStage = previousStage;
+        this.updatingStageIds.delete(application.id);
+        this.error = 'That process stage change was rejected.';
+      },
+    });
+  }
+
   label(value: string): string {
     return value.toLowerCase().replaceAll('_', ' ').replace(/\b\w/g, char => char.toUpperCase());
+  }
+
+  stageLabel(stage: ProcessStage | null | undefined): string {
+    return this.processStages.find(item => item.value === stage)?.label
+      ?? this.processStages[0].label;
   }
 
   private loadAllApplications(page = 0, accumulated: ApplicationRecord[] = []): Observable<ApplicationRecord[]> {

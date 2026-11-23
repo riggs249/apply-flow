@@ -13,6 +13,7 @@ public record AssessmentResponse(
         String title,
         String assessmentType,
         String instructions,
+        String linkUrl,
         Instant dueAt,
         Instant completedAt,
         AssessmentStatus status,

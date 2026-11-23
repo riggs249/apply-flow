@@ -1,10 +1,12 @@
 package com.applyflow.application.repository;
 
 import com.applyflow.application.entity.Interview;
+import com.applyflow.application.entity.InterviewOutcome;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -46,7 +48,34 @@ public interface InterviewRepository extends JpaRepository<Interview, UUID> {
 
     @Query("""
             select i from Interview i
+            join fetch i.application a
+            join fetch a.company
+            where a.user.id = :userId
+              and a.id = :applicationId
+            order by i.scheduledAt asc
+            """)
+    List<Interview> findOwnedByApplicationId(@Param("userId") UUID userId,
+                                             @Param("applicationId") UUID applicationId);
+
+    @Query("""
+            select i from Interview i
             where i.id = :interviewId and i.application.user.id = :userId
             """)
     Optional<Interview> findOwned(@Param("userId") UUID userId, @Param("interviewId") UUID interviewId);
+
+    @Query("""
+            select i from Interview i
+            join fetch i.application a
+            join fetch a.company
+            join fetch a.user
+            where (i.outcome is null or i.outcome in :activeOutcomes)
+              and i.scheduledAt <= :horizon
+              and (
+                   i.leadEmails.emailed24hAt is null
+                or i.leadEmails.emailed1hAt is null
+                or i.leadEmails.emailedDueAt is null
+              )
+            """)
+    List<Interview> findNeedingLeadEmails(@Param("activeOutcomes") Collection<InterviewOutcome> activeOutcomes,
+                                          @Param("horizon") Instant horizon);
 }

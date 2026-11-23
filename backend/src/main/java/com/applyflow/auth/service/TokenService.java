@@ -39,27 +39,35 @@ public class TokenService {
     }
 
     public AuthResponse issue(User user) {
-        Instant now = Instant.now();
-        Instant expiresAt = now.plus(accessTokenMinutes, ChronoUnit.MINUTES);
-        JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("applyflow")
-                .subject(user.getId().toString())
-                .issuedAt(now)
-                .expiresAt(expiresAt)
-                .claim("email", user.getEmail())
-                .build();
-        String accessToken = jwtEncoder.encode(JwtEncoderParameters.from(
-                org.springframework.security.oauth2.jwt.JwsHeader.with(MacAlgorithm.HS256).build(),
-                claims
-        )).getTokenValue();
-
+        String accessToken = issueAccessToken(user);
         String refreshToken = UUID.randomUUID() + "." + UUID.randomUUID();
         refreshTokenRepository.save(new RefreshToken(
                 user,
                 hash(refreshToken),
-                now.plus(refreshTokenDays, ChronoUnit.DAYS)
+                Instant.now().plus(refreshTokenDays, ChronoUnit.DAYS)
         ));
-        return new AuthResponse(accessToken, refreshToken, accessTokenMinutes * 60);
+        return new AuthResponse(accessToken, refreshToken, accessTokenExpiresInSeconds());
+    }
+
+    public String issueAccessToken(User user) {
+        Instant now = Instant.now();
+        Instant expiresAt = now.plus(accessTokenMinutes, ChronoUnit.MINUTES);
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuer("hanaptracker")
+                .subject(user.getId().toString())
+                .issuedAt(now)
+                .expiresAt(expiresAt)
+                .claim("email", user.getEmail())
+                .claim("displayName", user.getDisplayName())
+                .build();
+        return jwtEncoder.encode(JwtEncoderParameters.from(
+                org.springframework.security.oauth2.jwt.JwsHeader.with(MacAlgorithm.HS256).build(),
+                claims
+        )).getTokenValue();
+    }
+
+    public long accessTokenExpiresInSeconds() {
+        return accessTokenMinutes * 60;
     }
 
     public RefreshToken findUsable(String rawToken) {
@@ -70,6 +78,10 @@ public class TokenService {
 
     public void revoke(String rawToken) {
         findUsable(rawToken).revoke();
+    }
+
+    public void revokeAllForUser(UUID userId) {
+        refreshTokenRepository.revokeAllActiveForUser(userId, Instant.now());
     }
 
     private String hash(String token) {

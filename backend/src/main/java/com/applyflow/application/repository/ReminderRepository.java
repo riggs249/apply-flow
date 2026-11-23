@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,6 +22,17 @@ public interface ReminderRepository extends JpaRepository<Reminder, UUID> {
             order by r.remindAt asc
             """)
     List<Reminder> findAllOwned(@Param("userId") UUID userId);
+
+    @Query("""
+            select r from Reminder r
+            left join fetch r.application application
+            left join fetch application.company
+            where r.user.id = :userId
+              and application.id = :applicationId
+            order by r.remindAt asc
+            """)
+    List<Reminder> findOwnedByApplicationId(@Param("userId") UUID userId,
+                                            @Param("applicationId") UUID applicationId);
 
     @Query("""
             select r from Reminder r
@@ -40,11 +52,30 @@ public interface ReminderRepository extends JpaRepository<Reminder, UUID> {
 
     @Query("""
             select r from Reminder r
+            join fetch r.user
+            left join fetch r.application application
+            left join fetch application.company
             where r.status = :status
               and r.remindAt <= :now
             """)
     List<Reminder> findPendingDue(@Param("status") ReminderStatus status,
                                   @Param("now") Instant now);
+
+    @Query("""
+            select r from Reminder r
+            join fetch r.user
+            left join fetch r.application application
+            left join fetch application.company
+            where r.status in :statuses
+              and r.remindAt <= :horizon
+              and (
+                   r.leadEmails.emailed24hAt is null
+                or r.leadEmails.emailed1hAt is null
+                or r.leadEmails.emailedDueAt is null
+              )
+            """)
+    List<Reminder> findNeedingLeadEmails(@Param("statuses") Collection<ReminderStatus> statuses,
+                                         @Param("horizon") Instant horizon);
 
     long countByUserIdAndStatus(UUID userId, ReminderStatus status);
 }

@@ -12,8 +12,8 @@ public class OpenApiConfig {
     public OpenAPI applyFlowOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("ApplyFlow API")
+                        .title("HanapTracker API")
                         .version("v1")
-                        .description("REST API for the ApplyFlow job application management platform"));
+                        .description("REST API for the HanapTracker job application management platform"));
     }
 }

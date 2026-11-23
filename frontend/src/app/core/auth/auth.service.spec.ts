@@ -3,9 +3,9 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { AuthService } from './auth.service';
 
-function buildToken(email = 'alex@example.com', sub = 'user-1'): string {
+function buildToken(email = 'alex@example.com', sub = 'user-1', displayName = 'Alex Rivera'): string {
   const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-  const payload = btoa(JSON.stringify({ sub, email }));
+  const payload = btoa(JSON.stringify({ sub, email, displayName }));
   return `${header}.${payload}.signature`;
 }
 
@@ -43,19 +43,20 @@ describe('AuthService', () => {
 
     expect(service.getToken()).toBe(accessToken);
     expect(service.isAuthenticated()).toBe(accessToken);
-    expect(localStorage.getItem('applyflow.accessToken')).toBe(accessToken);
-    expect(localStorage.getItem('applyflow.refreshToken')).toBe('refresh-token');
+    expect(localStorage.getItem('hanaptracker.accessToken')).toBe(accessToken);
+    expect(localStorage.getItem('hanaptracker.refreshToken')).toBe('refresh-token');
     expect(service.currentUser()?.email).toBe('alex@example.com');
+    expect(service.currentUser()?.displayName).toBe('Alex Rivera');
   });
 
   it('clears the access token and authentication state on logout', () => {
     service.setToken(buildToken());
-    localStorage.setItem('applyflow.refreshToken', 'refresh-token');
+    localStorage.setItem('hanaptracker.refreshToken', 'refresh-token');
     service.clearSession();
 
     expect(service.getToken()).toBeNull();
     expect(service.isAuthenticated()).toBeNull();
-    expect(localStorage.getItem('applyflow.accessToken')).toBeNull();
+    expect(localStorage.getItem('hanaptracker.accessToken')).toBeNull();
     expect(service.currentUser()).toBeNull();
   });
 });

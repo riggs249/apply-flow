@@ -1,8 +1,10 @@
 package com.applyflow.application.entity;
 
 import com.applyflow.common.persistence.BaseEntity;
+import com.applyflow.notification.LeadEmailMarks;
 import com.applyflow.user.entity.User;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -34,6 +36,9 @@ public class Reminder extends BaseEntity {
     @Column(name = "completed_at")
     private Instant completedAt;
 
+    @Embedded
+    private LeadEmailMarks leadEmails = new LeadEmailMarks();
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private ReminderStatus status;
@@ -57,6 +62,7 @@ public class Reminder extends BaseEntity {
         this.reminderType = reminderType;
         this.remindAt = remindAt;
         this.status = ReminderStatus.PENDING;
+        this.leadEmails = new LeadEmailMarks();
     }
 
     public void update(String title, String description, ReminderType reminderType,
@@ -64,6 +70,9 @@ public class Reminder extends BaseEntity {
         this.title = title;
         this.description = description;
         this.reminderType = reminderType;
+        if (!this.remindAt.equals(remindAt)) {
+            leadEmails().clear();
+        }
         this.remindAt = remindAt;
         this.application = application;
     }
@@ -85,10 +94,20 @@ public class Reminder extends BaseEntity {
     }
 
     public void reschedule(Instant remindAt) {
+        if (!this.remindAt.equals(remindAt)) {
+            leadEmails().clear();
+        }
         this.remindAt = remindAt;
         if (this.status == ReminderStatus.OVERDUE) {
             this.status = ReminderStatus.PENDING;
         }
+    }
+
+    public LeadEmailMarks leadEmails() {
+        if (leadEmails == null) {
+            leadEmails = new LeadEmailMarks();
+        }
+        return leadEmails;
     }
 
     public User getUser() { return user; }
@@ -98,5 +117,8 @@ public class Reminder extends BaseEntity {
     public ReminderType getReminderType() { return reminderType; }
     public Instant getRemindAt() { return remindAt; }
     public Instant getCompletedAt() { return completedAt; }
+    public Instant getEmailedAt() { return leadEmails().getEmailedDueAt(); }
+    public Instant getEmailed24hAt() { return leadEmails().getEmailed24hAt(); }
+    public Instant getEmailed1hAt() { return leadEmails().getEmailed1hAt(); }
     public ReminderStatus getStatus() { return status; }
 }

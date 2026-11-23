@@ -6,6 +6,9 @@ import com.applyflow.application.entity.JobApplication;
 import com.applyflow.application.repository.AssessmentRepository;
 import com.applyflow.application.repository.JobApplicationRepository;
 import com.applyflow.common.exception.ResourceNotFoundException;
+import com.applyflow.notification.NotificationDispatchService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,18 +18,35 @@ import java.util.UUID;
 @Service
 @Transactional
 public class AssessmentServiceImpl implements AssessmentService {
+    private static final Logger log = LoggerFactory.getLogger(AssessmentServiceImpl.class);
+
     private final AssessmentRepository assessmentRepository;
     private final JobApplicationRepository applicationRepository;
+    private final NotificationDispatchService notificationDispatchService;
 
-    public AssessmentServiceImpl(AssessmentRepository assessmentRepository, JobApplicationRepository applicationRepository) {
+    public AssessmentServiceImpl(
+            AssessmentRepository assessmentRepository,
+            JobApplicationRepository applicationRepository,
+            NotificationDispatchService notificationDispatchService
+    ) {
         this.assessmentRepository = assessmentRepository;
         this.applicationRepository = applicationRepository;
+        this.notificationDispatchService = notificationDispatchService;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<AssessmentResponse> findAll(UUID userId) {
         return assessmentRepository.findAllOwned(userId).stream().map(this::toResponse).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AssessmentResponse> findByApplicationId(UUID userId, UUID applicationId) {
+        getApplication(userId, applicationId);
+        return assessmentRepository.findOwnedByApplicationId(userId, applicationId).stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     @Override
@@ -39,15 +59,22 @@ public class AssessmentServiceImpl implements AssessmentService {
     public AssessmentResponse create(UUID userId, AssessmentCreateRequest request) {
         JobApplication application = getApplication(userId, request.applicationId());
         Assessment assessment = new Assessment(application, request.title().trim(), request.assessmentType().trim(),
-                request.instructions(), request.dueAt(), request.status(), request.result(), request.notes());
-        return toResponse(assessmentRepository.save(assessment));
+                request.instructions(), normalizeLink(request.linkUrl()), request.dueAt(), request.status(),
+                request.result(), request.notes());
+        Assessment saved = assessmentRepository.save(assessment);
+        try {
+            notificationDispatchService.sendAssessmentAdded(application.getUser(), saved);
+        } catch (RuntimeException exception) {
+            log.warn("Failed to email assessment {}: {}", saved.getId(), exception.getMessage());
+        }
+        return toResponse(saved);
     }
 
     @Override
     public AssessmentResponse update(UUID userId, UUID assessmentId, AssessmentUpdateRequest request) {
         Assessment assessment = getOwned(userId, assessmentId);
         assessment.update(request.title().trim(), request.assessmentType().trim(), request.instructions(),
-                request.dueAt(), request.status(), request.result(), request.notes());
+                normalizeLink(request.linkUrl()), request.dueAt(), request.status(), request.result(), request.notes());
         return toResponse(assessment);
     }
 
@@ -71,7 +98,14 @@ public class AssessmentServiceImpl implements AssessmentService {
         return new AssessmentResponse(assessment.getId(), assessment.getApplication().getId(),
                 assessment.getApplication().getJobTitle(), assessment.getApplication().getCompany().getName(),
                 assessment.getTitle(), assessment.getAssessmentType(), assessment.getInstructions(),
-                assessment.getDueAt(), assessment.getCompletedAt(), assessment.getStatus(),
+                assessment.getLinkUrl(), assessment.getDueAt(), assessment.getCompletedAt(), assessment.getStatus(),
                 assessment.getResult(), assessment.getNotes(), assessment.getCreatedAt(), assessment.getUpdatedAt());
+    }
+
+    private String normalizeLink(String linkUrl) {
+        if (linkUrl == null || linkUrl.isBlank()) {
+            return null;
+        }
+        return linkUrl.trim();
     }
 }

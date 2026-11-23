@@ -2,192 +2,260 @@ import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { ApplicationService } from './application.service';
 import { ApplicationActivity, ApplicationRecord } from './application.models';
 import { DatePipe } from '@angular/common';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { LoadingStateComponent } from '../../shared/components/loading-state/loading-state.component';
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
 import { ResumeService } from '../resumes/resume.service';
+import { InterviewRecord } from '../interviews/interview.models';
+import { AssessmentRecord } from '../assessments/assessment.models';
+import { ReminderRecord } from '../reminders/reminder.models';
 
 @Component({
   selector: 'app-application-detail-page',
   standalone: true,
-  imports: [RouterLink, MatIconModule, PageHeaderComponent, DatePipe],
+  imports: [RouterLink, MatIconModule, PageHeaderComponent, DatePipe, LoadingStateComponent],
   template: `
-    @if (loading) { <div class="state">Loading application…</div> }
+    @if (loading) { <app-loading-state message="Loading application…" /> }
     @else if (error) { <div class="error">{{ error }}</div> }
     @else if (application) {
+      <div class="mb-3">
+        <a class="text-button inline-flex items-center gap-1 !p-0" routerLink="/applications">
+          <mat-icon class="!size-[18px] !text-[18px]">arrow_back</mat-icon>
+          Back to applications
+        </a>
+      </div>
       <app-page-header [eyebrow]="application.companyName" [title]="application.position" [description]="application.location || 'Location not specified'">
-        <div class="header-actions"><a class="secondary-button" [routerLink]="['/applications', application.id, 'edit']"><mat-icon>edit</mat-icon> Edit</a><button class="danger-button" (click)="deleteApplication()"><mat-icon>delete_outline</mat-icon> Delete</button></div>
+        <div class="flex gap-[.55rem] max-[700px]:flex-wrap">
+          <a class="secondary-button" [routerLink]="['/applications', application.id, 'edit']"><mat-icon>edit</mat-icon> Edit</a>
+          <button class="danger-button" (click)="deleteApplication()"><mat-icon>delete_outline</mat-icon> Delete</button>
+        </div>
       </app-page-header>
-      <section class="detail-grid">
-        <article class="panel">
-          <h2>Application overview</h2>
-          <div class="details">@for (item of details; track item.label) { <div><span>{{ item.label }}</span><strong>{{ item.value }}</strong></div> }</div>
+
+      <section class="grid grid-cols-[1.15fr_.85fr] gap-3 max-[700px]:grid-cols-[1fr]">
+        <article class="panel !p-4">
+          <h2 class="m-0 mb-3 text-[.92rem] text-af-text">Application overview</h2>
+          <div class="grid grid-cols-2 gap-x-4 gap-y-3 max-[700px]:grid-cols-1">
+            @for (item of details; track item.label) {
+              <div>
+                <span class="mb-[.15rem] block text-[.68rem] text-af-text-faint">{{ item.label }}</span>
+                <strong class="text-[.8rem] font-[650] text-af-text-secondary">{{ item.value }}</strong>
+              </div>
+            }
+          </div>
+
           @if (application.jobPostingUrl) {
-            <div class="link-block">
-              <span>Job posting</span>
-              <a [href]="application.jobPostingUrl" target="_blank" rel="noopener noreferrer">{{ application.jobPostingUrl }}</a>
+            <div class="mt-3 border-t border-af-divider pt-3">
+              <span class="mb-[.2rem] block text-[.68rem] text-af-text-faint">Job posting</span>
+              <a
+                class="inline-block max-w-full text-[.78rem] font-[650] text-af-accent [overflow-wrap:anywhere] [word-break:break-word]"
+                [href]="application.jobPostingUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+              >{{ application.jobPostingUrl }}</a>
             </div>
           }
+
           @if (application.resumeId) {
-            <div class="resume-block">
-              <h2 class="section-divider">Resume</h2>
-              <p class="notes">{{ application.resumeDescription || 'No description for this resume.' }}</p>
-              <button class="secondary-button" type="button" (click)="previewResume()"><mat-icon>visibility</mat-icon> View CV</button>
+            <div class="mt-3 border-t border-af-divider pt-3">
+              <div class="mb-2 flex items-center justify-between gap-3">
+                <h2 class="m-0 text-[.92rem] text-af-text">Resume</h2>
+                <button class="secondary-button !px-3 !py-1.5 !text-[.75rem]" type="button" (click)="previewResume()">
+                  <mat-icon>visibility</mat-icon> View CV
+                </button>
+              </div>
+              @if (application.resumeFileName) {
+                <p class="m-0 mb-1.5 flex items-center gap-[.35rem] text-[.75rem] text-af-text-secondary">
+                  <mat-icon class="!size-[16px] !text-[16px] text-af-accent">picture_as_pdf</mat-icon>
+                  <span class="truncate">{{ application.resumeFileName }}</span>
+                </p>
+              }
+              <p class="m-0 whitespace-pre-wrap text-[.78rem] leading-[1.5] text-af-text-muted">
+                {{ application.resumeDescription || 'No description for this resume.' }}
+              </p>
             </div>
           }
         </article>
-        <article class="panel">
-          <h2>Personal notes</h2>
-          <p class="notes">{{ application.personalNotes || 'No notes added yet.' }}</p>
+
+        <article class="panel !p-4">
+          <h2 class="m-0 mb-3 text-[.92rem] text-af-text">Personal notes</h2>
+          <p class="m-0 whitespace-pre-wrap text-[.78rem] leading-[1.55] text-af-text-muted">
+            {{ application.personalNotes || 'No notes added yet.' }}
+          </p>
         </article>
       </section>
 
-      <section class="panel description-panel">
-        <div class="description-header">
-          <h2>Job description</h2>
+      @if (previewUrl) {
+        <section class="panel mt-3 !p-4">
+          <div class="mb-2.5 flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <h2 class="m-0 text-[.92rem] text-af-text">{{ application.resumeTitle || 'Resume' }}</h2>
+              @if (application.resumeFileName) {
+                <p class="m-0 mt-1 truncate text-[.72rem] text-af-text-faint">{{ application.resumeFileName }}</p>
+              }
+            </div>
+            <button class="secondary-button !px-3 !py-1.5 !text-[.75rem]" type="button" (click)="closePreview()"><mat-icon>close</mat-icon> Close</button>
+          </div>
+          <iframe class="h-[min(65vh,720px)] w-full rounded-af border border-af-border bg-white" [src]="previewUrl" title="Resume preview"></iframe>
+        </section>
+      }
+
+      <section class="panel mt-3 !p-4">
+        <div class="mb-2.5 flex items-center justify-between gap-3">
+          <h2 class="m-0 text-[.92rem] text-af-text">Job description</h2>
           @if (canToggleDescription) {
-            <button class="text-button" type="button" (click)="toggleDescription()">
+            <button class="text-button inline-flex items-center gap-[.15rem] p-0 !text-[.78rem] !font-semibold" type="button" (click)="toggleDescription()">
               {{ descriptionExpanded ? 'Show less' : 'Show more' }}
-              <mat-icon>{{ descriptionExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
+              <mat-icon class="!size-4 !text-[1rem]">{{ descriptionExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
             </button>
           }
         </div>
         @if (!application.jobDescription) {
-          <p class="muted">No job description added.</p>
+          <p class="m-0 text-[.78rem] text-af-text-faint">No job description added.</p>
         } @else {
-          <div class="description-wrap">
-            <div class="description-body" [class.collapsed]="!descriptionExpanded && canToggleDescription">
-              <p class="notes description-text">{{ application.jobDescription }}</p>
+          <div class="relative">
+            <div [class.max-h-52]="!descriptionExpanded && canToggleDescription" [class.overflow-hidden]="!descriptionExpanded && canToggleDescription">
+              <p class="m-0 max-w-[72ch] whitespace-pre-wrap text-[.78rem] leading-[1.55] text-af-text-muted">{{ application.jobDescription }}</p>
             </div>
             @if (canToggleDescription && !descriptionExpanded) {
-              <div class="description-fade"></div>
+              <div class="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-[linear-gradient(to_bottom,transparent,var(--af-surface))]"></div>
             }
           </div>
         }
       </section>
 
-      @if (previewUrl) {
-        <section class="panel preview-panel">
-          <div class="preview-header">
-            <h2>{{ application.resumeTitle || 'Resume' }}</h2>
-            <button class="secondary-button" type="button" (click)="closePreview()"><mat-icon>close</mat-icon> Close</button>
+      <section class="mt-3 grid grid-cols-3 gap-3 max-[900px]:grid-cols-1">
+        <article class="panel !p-4">
+          <div class="mb-2.5 flex items-center justify-between gap-2">
+            <h2 class="m-0 text-[.92rem] text-af-text">Interviews</h2>
+            <a class="text-button !p-0 !text-[.72rem] !font-semibold" routerLink="/interviews">Manage</a>
           </div>
-          <iframe class="preview-frame" [src]="previewUrl" title="Resume preview"></iframe>
-        </section>
-      }
-      <section class="panel timeline-panel"><h2>Activity history</h2>@if (activitiesLoading) { <p class="muted">Loading activity…</p> } @else if (!activities.length) { <p class="muted">No activity recorded yet.</p> } @else { <ol class="timeline">@for (activity of activities; track activity.id) { <li><span class="timeline-dot"></span><div><strong>{{ activity.description }}</strong><time>{{ activity.occurredAt | date:'MMM d, y, h:mm a' }}</time></div></li> }</ol> }</section>
+          @if (relatedLoading) {
+            <p class="m-0 text-[.78rem] text-af-text-faint">Loading…</p>
+          } @else if (!interviews.length) {
+            <p class="m-0 text-[.78rem] text-af-text-faint">No interviews linked yet.</p>
+          } @else {
+            <ul class="m-0 list-none p-0">
+              @for (item of interviews; track item.id) {
+                <li class="py-2 not-first:border-t not-first:border-af-divider">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <strong class="block truncate text-[.78rem] font-[550] text-af-text-secondary">{{ item.interviewType }}</strong>
+                      <time class="mt-[.2rem] block text-[.68rem] text-af-text-faint">{{ item.scheduledAt | date:'MMM d, y, h:mm a' }}</time>
+                    </div>
+                    <span class="shrink-0 rounded-af-sm px-[.45rem] py-[.2rem] text-[.62rem] font-bold" [class]="outcomeClass(item.outcome)">{{ label(item.outcome) }}</span>
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </article>
+
+        <article class="panel !p-4">
+          <div class="mb-2.5 flex items-center justify-between gap-2">
+            <h2 class="m-0 text-[.92rem] text-af-text">Assessments</h2>
+            <a class="text-button !p-0 !text-[.72rem] !font-semibold" routerLink="/assessments">Manage</a>
+          </div>
+          @if (relatedLoading) {
+            <p class="m-0 text-[.78rem] text-af-text-faint">Loading…</p>
+          } @else if (!assessments.length) {
+            <p class="m-0 text-[.78rem] text-af-text-faint">No assessments linked yet.</p>
+          } @else {
+            <ul class="m-0 list-none p-0">
+              @for (item of assessments; track item.id) {
+                <li class="py-2 not-first:border-t not-first:border-af-divider">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <strong class="block truncate text-[.78rem] font-[550] text-af-text-secondary">{{ item.title }}</strong>
+                      <span class="mt-[.2rem] block text-[.68rem] text-af-text-faint">
+                        {{ item.assessmentType }}
+                        @if (item.dueAt) { · due {{ item.dueAt | date:'MMM d, y' }} }
+                      </span>
+                    </div>
+                    <span class="shrink-0 rounded-af-sm px-[.45rem] py-[.2rem] text-[.62rem] font-bold" [class]="statusClass(item.status)">{{ label(item.status) }}</span>
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </article>
+
+        <article class="panel !p-4">
+          <div class="mb-2.5 flex items-center justify-between gap-2">
+            <h2 class="m-0 text-[.92rem] text-af-text">Reminders</h2>
+            <a class="text-button !p-0 !text-[.72rem] !font-semibold" routerLink="/reminders">Manage</a>
+          </div>
+          @if (relatedLoading) {
+            <p class="m-0 text-[.78rem] text-af-text-faint">Loading…</p>
+          } @else if (!reminders.length) {
+            <p class="m-0 text-[.78rem] text-af-text-faint">No reminders linked yet.</p>
+          } @else {
+            <ul class="m-0 list-none p-0">
+              @for (item of reminders; track item.id) {
+                <li class="py-2 not-first:border-t not-first:border-af-divider">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <strong class="block truncate text-[.78rem] font-[550] text-af-text-secondary">{{ item.title }}</strong>
+                      <time class="mt-[.2rem] block text-[.68rem] text-af-text-faint">{{ item.remindAt | date:'MMM d, y, h:mm a' }}</time>
+                    </div>
+                    <span
+                      class="shrink-0 rounded-af-sm px-[.45rem] py-[.2rem] text-[.62rem] font-bold"
+                      [class.text-af-danger]="item.timingState === 'OVERDUE'"
+                      [class.bg-af-danger-soft]="item.timingState === 'OVERDUE'"
+                      [class.text-af-accent]="item.timingState !== 'OVERDUE'"
+                      [class.bg-af-accent-soft]="item.timingState !== 'OVERDUE'"
+                    >{{ label(item.timingState) }}</span>
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </article>
+      </section>
+
+      <section class="panel mt-3 !p-4">
+        <h2 class="m-0 mb-2.5 text-[.92rem] text-af-text">Activity history</h2>
+        @if (activitiesLoading) {
+          <p class="m-0 text-[.78rem] text-af-text-faint">Loading activity…</p>
+        } @else if (!activities.length) {
+          <p class="m-0 text-[.78rem] text-af-text-faint">No activity recorded yet.</p>
+        } @else {
+          <ol class="m-0 list-none p-0">
+            @for (activity of activities; track activity.id) {
+              <li class="flex gap-[.65rem] py-2 not-first:border-t not-first:border-af-divider">
+                <span class="mt-[.35rem] size-2 flex-none rounded-full bg-af-accent"></span>
+                <div>
+                  <strong class="block text-[.78rem] font-[550] text-af-text-secondary">{{ activity.description }}</strong>
+                  <time class="mt-[.2rem] block text-[.68rem] text-af-text-faint">{{ activity.occurredAt | date:'MMM d, y, h:mm a' }}</time>
+                </div>
+              </li>
+            }
+          </ol>
+        }
+      </section>
     }
   `,
-  styles: [`
-    .header-actions { display: flex; gap: .6rem; }
-    .detail-grid { display: grid; gap: 1rem; grid-template-columns: 1.1fr .9fr; }
-    .timeline-panel, .preview-panel, .description-panel { margin-top: 1rem; }
-    h2 { color: var(--af-text); font-size: 1rem; margin: 0 0 1.25rem; }
-    .details { display: grid; gap: 1.25rem; grid-template-columns: repeat(2, 1fr); }
-    .details span { color: var(--af-text-faint); display: block; font-size: .7rem; margin-bottom: .3rem; }
-    .details strong { color: var(--af-text-secondary); font-size: .82rem; }
-    .notes { color: var(--af-text-muted); font-size: .82rem; line-height: 1.7; margin: 0; white-space: pre-wrap; }
-    .section-divider { border-top: 1px solid var(--af-divider); margin-top: 1.5rem; padding-top: 1.5rem; }
-    .link-block {
-      border-top: 1px solid var(--af-divider);
-      margin-top: 1.5rem;
-      padding-top: 1.25rem;
-    }
-    .link-block span {
-      color: var(--af-text-faint);
-      display: block;
-      font-size: .7rem;
-      margin-bottom: .35rem;
-    }
-    .link-block a {
-      color: var(--af-accent);
-      display: inline-block;
-      font-size: .82rem;
-      max-width: 100%;
-      overflow-wrap: anywhere;
-      word-break: break-word;
-    }
-    .resume-block .secondary-button { margin-top: .75rem; }
-    .description-header {
-      align-items: center;
-      display: flex;
-      gap: 1rem;
-      justify-content: space-between;
-      margin-bottom: 1rem;
-    }
-    .description-header h2 { margin: 0; }
-    .text-button {
-      align-items: center;
-      background: transparent;
-      border: 0;
-      color: var(--af-accent);
-      cursor: pointer;
-      display: inline-flex;
-      font: inherit;
-      font-size: .82rem;
-      font-weight: 600;
-      gap: .15rem;
-      padding: 0;
-    }
-    .text-button mat-icon { font-size: 1.1rem; height: 1.1rem; width: 1.1rem; }
-    .description-wrap { position: relative; }
-    .description-body.collapsed {
-      max-height: 18rem;
-      overflow: hidden;
-    }
-    .description-fade {
-      background: linear-gradient(to bottom, transparent, var(--af-surface));
-      bottom: 0;
-      height: 4.5rem;
-      left: 0;
-      pointer-events: none;
-      position: absolute;
-      right: 0;
-    }
-    .description-text { max-width: 72ch; }
-    .preview-header { align-items: center; display: flex; justify-content: space-between; gap: 1rem; margin-bottom: .85rem; }
-    .preview-header h2 { margin: 0; }
-    .preview-frame {
-      background: #fff;
-      border: 1px solid var(--af-border);
-      border-radius: var(--af-radius);
-      height: min(70vh, 820px);
-      width: 100%;
-    }
-    .muted { color: var(--af-text-faint); font-size: .82rem; margin: 0; }
-    .timeline { list-style: none; margin: 0; padding: 0; }
-    .timeline li { display: flex; gap: .8rem; padding: .75rem 0; }
-    .timeline-dot {
-      background: var(--af-accent);
-      border-radius: 50%;
-      flex: none;
-      height: 9px;
-      margin-top: .3rem;
-      width: 9px;
-    }
-    .timeline li + li { border-top: 1px solid var(--af-divider); }
-    .timeline strong, .timeline time { display: block; }
-    .timeline strong { color: var(--af-text-secondary); font-size: .82rem; font-weight: 550; }
-    .timeline time { color: var(--af-text-faint); font-size: .7rem; margin-top: .25rem; }
-    @media (max-width: 700px) {
-      .detail-grid { grid-template-columns: 1fr; }
-      .header-actions { flex-wrap: wrap; }
-      .details { grid-template-columns: 1fr; }
-    }
-  `],
 })
 export class ApplicationDetailPageComponent implements OnInit, OnDestroy {
   private static readonly DESCRIPTION_COLLAPSE_CHARS = 700;
 
   private readonly service = inject(ApplicationService);
   private readonly resumeService = inject(ResumeService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   application?: ApplicationRecord;
   activities: ApplicationActivity[] = [];
+  interviews: InterviewRecord[] = [];
+  assessments: AssessmentRecord[] = [];
+  reminders: ReminderRecord[] = [];
   activitiesLoading = true;
+  relatedLoading = true;
   loading = true;
   error = '';
   details: { label: string; value: string }[] = [];
@@ -216,15 +284,13 @@ export class ApplicationDetailPageComponent implements OnInit, OnDestroy {
           { label: 'Resume', value: resumeLabel },
         ];
         this.loading = false;
-        this.service.activities(id).subscribe({
-          next: items => { this.activities = items; this.activitiesLoading = false; },
-          error: () => this.activitiesLoading = false,
-        });
+        this.loadRelated(id);
       },
       error: () => {
         this.error = 'Application could not be loaded.';
         this.loading = false;
         this.activitiesLoading = false;
+        this.relatedLoading = false;
       },
     });
   }
@@ -258,14 +324,62 @@ export class ApplicationDetailPageComponent implements OnInit, OnDestroy {
   }
 
   deleteApplication(): void {
-    if (!this.application || !confirm(`Delete the application for ${this.application.position}?`)) return;
-    this.service.delete(this.application.id).subscribe({
-      next: () => this.router.navigateByUrl('/applications'),
-      error: () => this.error = 'Application could not be deleted.',
+    if (!this.application) return;
+    const application = this.application;
+    this.confirmDialog.confirm({
+      title: 'Delete application',
+      message: `Delete the application for ${application.position}? This cannot be undone.`,
+    }).subscribe(confirmed => {
+      if (!confirmed) return;
+      this.service.delete(application.id).subscribe({
+        next: () => this.router.navigateByUrl('/applications'),
+        error: () => this.error = 'Application could not be deleted.',
+      });
     });
   }
 
   label(value: string): string {
     return value.toLowerCase().replaceAll('_', ' ').replace(/\b\w/g, char => char.toUpperCase());
+  }
+
+  outcomeClass(outcome: string): string {
+    switch (outcome) {
+      case 'PASSED': return 'bg-af-accent-soft text-af-accent';
+      case 'FAILED':
+      case 'CANCELLED': return 'bg-af-danger-soft text-af-danger';
+      case 'RESCHEDULED': return 'bg-af-border-soft text-af-text-muted';
+      default: return 'bg-af-border-soft text-af-text-secondary';
+    }
+  }
+
+  statusClass(status: string): string {
+    switch (status) {
+      case 'COMPLETED': return 'bg-af-accent-soft text-af-accent';
+      case 'EXPIRED': return 'bg-af-danger-soft text-af-danger';
+      case 'IN_PROGRESS': return 'bg-af-border-soft text-af-text-secondary';
+      default: return 'bg-af-border-soft text-af-text-muted';
+    }
+  }
+
+  private loadRelated(id: string): void {
+    forkJoin({
+      activities: this.service.activities(id).pipe(catchError(() => of([] as ApplicationActivity[]))),
+      interviews: this.service.interviews(id).pipe(catchError(() => of([] as InterviewRecord[]))),
+      assessments: this.service.assessments(id).pipe(catchError(() => of([] as AssessmentRecord[]))),
+      reminders: this.service.reminders(id).pipe(catchError(() => of([] as ReminderRecord[]))),
+    }).subscribe({
+      next: result => {
+        this.activities = result.activities;
+        this.interviews = result.interviews;
+        this.assessments = result.assessments;
+        this.reminders = result.reminders;
+        this.activitiesLoading = false;
+        this.relatedLoading = false;
+      },
+      error: () => {
+        this.activitiesLoading = false;
+        this.relatedLoading = false;
+      },
+    });
   }
 }

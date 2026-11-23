@@ -1,7 +1,9 @@
 package com.applyflow.application.entity;
 
 import com.applyflow.common.persistence.BaseEntity;
+import com.applyflow.notification.LeadEmailMarks;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -11,6 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.Objects;
 
 @Entity
 @Table(name = "assessments")
@@ -29,6 +32,9 @@ public class Assessment extends BaseEntity {
     @Column(columnDefinition = "text")
     private String instructions;
 
+    @Column(name = "link_url", length = 1000)
+    private String linkUrl;
+
     @Column(name = "due_at")
     private Instant dueAt;
 
@@ -45,27 +51,36 @@ public class Assessment extends BaseEntity {
     @Column(columnDefinition = "text")
     private String notes;
 
+    @Embedded
+    private LeadEmailMarks leadEmails = new LeadEmailMarks();
+
     protected Assessment() {
     }
 
     public Assessment(JobApplication application, String title, String assessmentType, String instructions,
-                      Instant dueAt, AssessmentStatus status, String result, String notes) {
+                      String linkUrl, Instant dueAt, AssessmentStatus status, String result, String notes) {
         this.application = application;
         this.title = title;
         this.assessmentType = assessmentType;
         this.instructions = instructions;
+        this.linkUrl = linkUrl;
         this.dueAt = dueAt;
         this.status = status;
         this.result = result;
         this.notes = notes;
         this.completedAt = status == AssessmentStatus.COMPLETED ? Instant.now() : null;
+        this.leadEmails = new LeadEmailMarks();
     }
 
-    public void update(String title, String assessmentType, String instructions, Instant dueAt,
+    public void update(String title, String assessmentType, String instructions, String linkUrl, Instant dueAt,
                        AssessmentStatus status, String result, String notes) {
+        if (!Objects.equals(this.dueAt, dueAt)) {
+            leadEmails().clear();
+        }
         this.title = title;
         this.assessmentType = assessmentType;
         this.instructions = instructions;
+        this.linkUrl = linkUrl;
         this.dueAt = dueAt;
         this.status = status;
         this.result = result;
@@ -79,10 +94,18 @@ public class Assessment extends BaseEntity {
         }
     }
 
+    public LeadEmailMarks leadEmails() {
+        if (leadEmails == null) {
+            leadEmails = new LeadEmailMarks();
+        }
+        return leadEmails;
+    }
+
     public JobApplication getApplication() { return application; }
     public String getTitle() { return title; }
     public String getAssessmentType() { return assessmentType; }
     public String getInstructions() { return instructions; }
+    public String getLinkUrl() { return linkUrl; }
     public Instant getDueAt() { return dueAt; }
     public Instant getCompletedAt() { return completedAt; }
     public AssessmentStatus getStatus() { return status; }

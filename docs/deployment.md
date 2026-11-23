@@ -1,4 +1,4 @@
-# ApplyFlow Deployment Guide
+# HanapTracker Deployment Guide
 
 No Google Cloud resources are created by this repository. Provisioning Cloud Run,
 Cloud SQL, or Cloud Storage requires explicit approval and will incur costs.
@@ -111,17 +111,26 @@ For a static Cloud Storage/Firebase frontend, configure the hosting provider to
 rewrite unknown routes to `index.html` and proxy or rewrite `/api/` to the
 backend origin.
 
-## Uploaded documents
+## Uploaded documents (Supabase Storage)
 
-At this stage, uploaded documents should use Cloud Storage only after adding:
+Resume PDFs can be stored in Supabase Storage instead of the local `uploads/` folder.
 
-- A private bucket
-- A server-side signed or authenticated upload flow
-- Object lifecycle rules
-- Storage CORS rules for the frontend origin
-- A path convention that includes the authenticated user ID
+1. In Supabase → **Project Settings → API**, copy the **Project URL** and **service_role** key.
+2. Create a private bucket named `resumes` (or let the backend create it on startup).
+3. Set these environment variables:
 
-Do not expose a bucket or signed object URL without server-side authorization.
+```text
+STORAGE_TYPE=supabase
+SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+SUPABASE_STORAGE_BUCKET=resumes
+```
+
+Objects are stored as `{userId}/{resumeId}.pdf`. The API still serves files through
+`GET /api/v1/resumes/{id}/file` after authentication — the bucket stays private and
+the service role key must never be exposed to the frontend.
+
+For local development without Supabase Storage, keep `STORAGE_TYPE=local` (default).
 
 ## GitHub Actions
 

@@ -18,6 +18,7 @@ export interface ApplicationRecord {
   resumeVersion?: string;
   resumeId?: string | null;
   resumeTitle?: string | null;
+  resumeFileName?: string | null;
   resumeDescription?: string | null;
   status: ApplicationStatus;
   processStage?: ProcessStage | null;

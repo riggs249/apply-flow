@@ -8,10 +8,20 @@ import { ChartData, ChartOptions } from 'chart.js';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { StatCardComponent } from '../../shared/components/stat-card/stat-card.component';
 import { DatePickerComponent } from '../../shared/components/date-picker/date-picker.component';
+import { LoadingStateComponent } from '../../shared/components/loading-state/loading-state.component';
 import { ReminderService } from '../reminders/reminder.service';
 import { ReminderRecord } from '../reminders/reminder.models';
 import { AnalyticsService } from './analytics.service';
-import { AnalyticsResponse } from './analytics.models';
+import { AnalyticsPoint, AnalyticsResponse } from './analytics.models';
+
+type TrendChartKey = 'monthly' | 'conversion' | 'interviews' | 'conversionRate' | 'cumulative';
+type PieChartKey = 'stages' | 'outcomes' | 'employment' | 'interviewReach' | 'responseSplit' | 'reminders';
+
+interface ChartOption<T extends string> {
+  key: T;
+  label: string;
+  description: string;
+}
 
 @Component({
   selector: 'app-dashboard-page',
@@ -22,6 +32,7 @@ import { AnalyticsResponse } from './analytics.models';
     PageHeaderComponent,
     StatCardComponent,
     DatePickerComponent,
+    LoadingStateComponent,
     RouterLink,
     DatePipe,
     BaseChartDirective,
@@ -31,7 +42,7 @@ import { AnalyticsResponse } from './analytics.models';
       <a class="primary-button" routerLink="/applications/new"><mat-icon>add</mat-icon> Add application</a>
     </app-page-header>
 
-    <form class="range-filter" [formGroup]="range">
+    <form class="range-filter max-[600px]:!items-stretch" [formGroup]="range">
       <app-date-picker placeholder="From" formControlName="from" />
       <app-date-picker placeholder="To" formControlName="to" />
       <button type="button" class="filter-button" (click)="load()">Apply range</button>
@@ -39,139 +50,120 @@ import { AnalyticsResponse } from './analytics.models';
     </form>
 
     @if (error) { <div class="error">{{ error }}</div> }
-    @if (loading) { <div class="state">Loading analytics…</div> }
+    @if (loading) { <app-loading-state message="Loading analytics…" /> }
     @else if (analytics) {
-      <section class="stats-grid" aria-label="Application statistics">
-        <app-stat-card label="Total applications" [value]="analytics.metrics.totalApplications.toString()" trend="In selected range" icon="work_outline" [positive]="true" />
-        <app-stat-card label="Active applications" [value]="analytics.metrics.activeApplications.toString()" trend="Not hired, rejected, or withdrawn" icon="pending_actions" [positive]="true" />
-        <app-stat-card label="Interviews scheduled" [value]="analytics.metrics.interviewsScheduled.toString()" trend="In selected range" icon="event" [positive]="true" />
-        <app-stat-card label="Hired" [value]="analytics.metrics.offersReceived.toString()" trend="Reached hired status" icon="workspace_premium" [positive]="true" />
-        <app-stat-card label="Rejections" [value]="analytics.metrics.rejections.toString()" trend="In selected range" icon="cancel" />
-        <app-stat-card label="Pending follow-ups" [value]="analytics.metrics.pendingFollowUps.toString()" trend="Pending or overdue" icon="notifications_none" />
-        <app-stat-card label="Response rate" [value]="analytics.metrics.applicationResponseRate + '%'" trend="Moved beyond wishlist" icon="trending_up" [positive]="true" />
-        <app-stat-card label="Interview conversion" [value]="analytics.metrics.interviewConversionRate + '%'" trend="Applications reaching interviews" icon="swap_horiz" [positive]="true" />
+      <section class="mb-5 grid grid-cols-[repeat(4,1fr)] gap-[.8rem] max-[1000px]:grid-cols-[repeat(2,1fr)] max-[600px]:grid-cols-[1fr]" aria-label="Application statistics">
+        @for (card of metricCards; track card.label) {
+          <app-stat-card [label]="card.label" [value]="card.value" [trend]="card.trend" [icon]="card.icon" [positive]="card.positive" />
+        }
       </section>
 
       @if (hasNoData) {
-        <section class="empty-state"><mat-icon>analytics</mat-icon><h2>No application data found</h2><p>Try another date range or add your first job application.</p><a class="primary-button" routerLink="/applications/new">Add application</a></section>
+        <section class="flex flex-col items-center rounded-af-lg border border-af-border bg-af-surface p-12 text-center shadow-af">
+          <mat-icon class="!size-[38px] !text-[38px] text-af-accent">analytics</mat-icon>
+          <h2 class="mx-0 mb-1 mt-[.7rem] text-[1.05rem]">No application data found</h2>
+          <p class="m-0 mb-4 text-af-text-faint">Try another date range or add your first job application.</p>
+          <a class="primary-button" routerLink="/applications/new">Add application</a>
+        </section>
       } @else {
-        <section class="chart-grid">
-          <article class="panel wide">
-            <div class="panel-heading"><div><h2>Applications submitted per month</h2><p>Monthly application volume</p></div></div>
-            <div class="chart"><canvas baseChart [type]="'line'" [data]="monthlyChart" [options]="lineOptions"></canvas></div>
-          </article>
-
+        <section class="mb-4">
           <article class="panel">
-            <div class="panel-heading"><div><h2>Recruitment stages</h2><p>Current application pipeline</p></div></div>
-            <div class="chart"><canvas baseChart [type]="'doughnut'" [data]="stageChart" [options]="doughnutOptions"></canvas></div>
+            <div class="panel-heading items-center gap-3">
+              <div>
+                <h2>{{ activeTrend.label }}</h2>
+                <p>{{ activeTrend.description }}</p>
+              </div>
+              <label class="chart-select">
+                <span class="sr-only">Trend chart</span>
+                <select [value]="trendChart" (change)="selectTrend($any($event.target).value)">
+                  @for (option of trendOptions; track option.key) {
+                    <option [value]="option.key">{{ option.label }}</option>
+                  }
+                </select>
+              </label>
+            </div>
+            <div class="chart-frame mt-4">
+              @if (trendIsBar) {
+                <canvas baseChart [type]="'bar'" [data]="activeTrendBar" [options]="barOptions"></canvas>
+              } @else {
+                <canvas baseChart [type]="'line'" [data]="activeTrendLine" [options]="lineOptions"></canvas>
+              }
+            </div>
+          </article>
+        </section>
+
+        <section class="grid grid-cols-2 items-stretch gap-4 max-[1000px]:grid-cols-[1fr]">
+          <article class="panel flex h-full flex-col">
+            <div class="panel-heading items-center gap-3">
+              <div>
+                <h2>{{ activePie.label }}</h2>
+                <p>{{ activePie.description }}</p>
+              </div>
+              <label class="chart-select">
+                <span class="sr-only">Distribution chart</span>
+                <select [value]="pieChart" (change)="selectPie($any($event.target).value)">
+                  @for (option of pieOptions; track option.key) {
+                    <option [value]="option.key">{{ option.label }}</option>
+                  }
+                </select>
+              </label>
+            </div>
+            <div class="chart-frame mt-4">
+              <canvas baseChart [type]="'doughnut'" [data]="activePieData" [options]="doughnutOptions"></canvas>
+            </div>
           </article>
 
-          <article class="panel">
-            <div class="panel-heading"><div><h2>Application outcomes</h2><p>Terminal and active statuses</p></div></div>
-            <div class="chart"><canvas baseChart [type]="'doughnut'" [data]="outcomeChart" [options]="doughnutOptions"></canvas></div>
-          </article>
-
-          <article class="panel wide">
-            <div class="panel-heading"><div><h2>Interview conversion trends</h2><p>Applications and interviews by month</p></div></div>
-            <div class="chart"><canvas baseChart [type]="'bar'" [data]="conversionChart" [options]="barOptions"></canvas></div>
-          </article>
-
-          <article class="panel">
-            <div class="panel-heading"><div><h2>Applications by employment type</h2><p>Full-time, contract, and other types</p></div></div>
-            <div class="chart"><canvas baseChart [type]="'doughnut'" [data]="employmentChart" [options]="doughnutOptions"></canvas></div>
-          </article>
+          <section class="notifications-panel flex h-full flex-col !m-0">
+            <div class="panel-heading">
+              <div><h2>Upcoming and overdue reminders</h2><p>Notifications that need attention</p></div>
+              <a class="text-button" routerLink="/reminders">View all</a>
+            </div>
+            @if (!notifications.length) {
+              <p class="m-0 mt-[1.2rem] border-t border-af-divider pt-[1.1rem] text-[.78rem] text-af-text-faint">No upcoming or overdue reminders.</p>
+            }
+            <div class="min-h-0 flex-1 overflow-auto">
+              @for (item of notifications.slice(0, 4); track item.id) {
+                <div class="mt-4 flex items-center gap-[.8rem] border-t border-af-divider pt-4">
+                  <span
+                    class="flex flex-none flex-col items-center rounded-af-sm px-[.65rem] py-[.45rem]"
+                    [class.bg-af-accent-soft]="item.timingState !== 'OVERDUE'"
+                    [class.text-af-accent]="item.timingState !== 'OVERDUE'"
+                    [class.bg-af-border-soft]="item.timingState === 'OVERDUE'"
+                    [class.text-af-text-muted]="item.timingState === 'OVERDUE'"
+                  ><strong class="text-[.95rem] text-af-text">{{ item.remindAt | date:'d' }}</strong><small class="text-[.55rem] text-inherit">{{ item.remindAt | date:'MMM' }}</small></span>
+                  <div class="flex min-w-0 flex-1 flex-col">
+                    <strong class="truncate text-[.82rem] text-af-text">{{ item.title }}</strong>
+                    <span class="truncate text-[.72rem] text-af-text-faint">{{ item.companyName ? item.companyName + ' · ' + item.applicationPosition : item.reminderType }}</span>
+                  </div>
+                  <mat-icon class="!text-[19px] text-af-text-faint">chevron_right</mat-icon>
+                </div>
+              }
+            </div>
+          </section>
         </section>
       }
     }
 
-    <section class="notifications-panel">
-      <div class="panel-heading"><div><h2>Upcoming and overdue reminders</h2><p>Notifications that need attention</p></div><a class="text-button" routerLink="/reminders">View all</a></div>
-      @if (!notifications.length) { <p class="empty-notifications">No upcoming or overdue reminders.</p> }
-      @for (item of notifications.slice(0, 4); track item.id) {
-        <div class="upcoming-item"><span class="date-badge" [class.muted]="item.timingState === 'OVERDUE'"><strong>{{ item.remindAt | date:'d' }}</strong><small>{{ item.remindAt | date:'MMM' }}</small></span><div><strong>{{ item.title }}</strong><span>{{ item.companyName ? item.companyName + ' · ' + item.applicationPosition : item.reminderType }}</span></div><mat-icon>chevron_right</mat-icon></div>
-      }
-    </section>
+    @if (!loading && (!analytics || hasNoData)) {
+      <section class="notifications-panel mt-4">
+        <div class="panel-heading"><div><h2>Upcoming and overdue reminders</h2><p>Notifications that need attention</p></div><a class="text-button" routerLink="/reminders">View all</a></div>
+        @if (!notifications.length) { <p class="m-0 mt-[1.2rem] border-t border-af-divider pt-[1.1rem] text-[.78rem] text-af-text-faint">No upcoming or overdue reminders.</p> }
+        @for (item of notifications.slice(0, 4); track item.id) {
+          <div class="mt-4 flex items-center gap-[.8rem] border-t border-af-divider pt-4">
+            <span
+              class="flex flex-none flex-col items-center rounded-af-sm px-[.65rem] py-[.45rem]"
+              [class.bg-af-accent-soft]="item.timingState !== 'OVERDUE'"
+              [class.text-af-accent]="item.timingState !== 'OVERDUE'"
+              [class.bg-af-border-soft]="item.timingState === 'OVERDUE'"
+              [class.text-af-text-muted]="item.timingState === 'OVERDUE'"
+            ><strong class="text-[.95rem] text-af-text">{{ item.remindAt | date:'d' }}</strong><small class="text-[.55rem] text-inherit">{{ item.remindAt | date:'MMM' }}</small></span>
+            <div class="flex flex-1 flex-col"><strong class="text-[.82rem] text-af-text">{{ item.title }}</strong><span class="text-[.72rem] text-af-text-faint">{{ item.companyName ? item.companyName + ' · ' + item.applicationPosition : item.reminderType }}</span></div>
+            <mat-icon class="!text-[19px] text-af-text-faint">chevron_right</mat-icon>
+          </div>
+        }
+      </section>
+    }
   `,
-  styles: [`
-    .stats-grid {
-      display: grid;
-      gap: .8rem;
-      grid-template-columns: repeat(4, 1fr);
-      margin-bottom: 1.25rem;
-    }
-    .chart-grid {
-      display: grid;
-      gap: 1rem;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-    .panel.wide { grid-column: span 2; }
-    .chart { height: 280px; margin-top: 1rem; }
-    .empty-state {
-      align-items: center;
-      background: var(--af-surface);
-      border: 1px solid var(--af-border);
-      border-radius: var(--af-radius-lg);
-      box-shadow: var(--af-shadow);
-      display: flex;
-      flex-direction: column;
-      padding: 3rem;
-      text-align: center;
-    }
-    .empty-state mat-icon {
-      color: var(--af-accent);
-      font-size: 38px;
-      height: 38px;
-      width: 38px;
-    }
-    .empty-state h2 { font-size: 1.05rem; margin: .7rem 0 .25rem; }
-    .empty-state p { color: var(--af-text-faint); margin: 0 0 1rem; }
-    .notifications-panel { margin-top: 1rem; }
-    .empty-notifications {
-      border-top: 1px solid var(--af-divider);
-      color: var(--af-text-faint);
-      font-size: .78rem;
-      margin: 1.2rem 0 0;
-      padding-top: 1.1rem;
-    }
-    .upcoming-item {
-      align-items: center;
-      border-top: 1px solid var(--af-divider);
-      display: flex;
-      gap: .8rem;
-      margin-top: 1rem;
-      padding-top: 1rem;
-    }
-    .upcoming-item > div { display: flex; flex: 1; flex-direction: column; }
-    .upcoming-item strong { color: var(--af-text); font-size: .82rem; }
-    .upcoming-item span { color: var(--af-text-faint); font-size: .72rem; }
-    .upcoming-item mat-icon { color: var(--af-text-faint); font-size: 19px; }
-    .date-badge {
-      align-items: center !important;
-      background: var(--af-accent-soft);
-      border-radius: var(--af-radius-sm);
-      color: var(--af-accent) !important;
-      display: flex !important;
-      flex: 0 0 auto !important;
-      flex-direction: column;
-      padding: .45rem .65rem;
-    }
-    .date-badge.muted {
-      background: var(--af-border-soft);
-      color: var(--af-text-muted) !important;
-    }
-    .date-badge strong { font-size: .95rem; }
-    .date-badge small { color: inherit !important; font-size: .55rem; }
-    @media (max-width: 1000px) {
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-      .chart-grid { grid-template-columns: 1fr; }
-      .panel.wide { grid-column: auto; }
-    }
-    @media (max-width: 600px) {
-      .stats-grid { grid-template-columns: 1fr; }
-      .range-filter { align-items: stretch; flex-wrap: wrap; }
-      .range-filter label { flex: 1 1 130px; }
-    }
-  `],
 })
 export class DashboardPageComponent implements OnInit {
   private readonly analyticsService = inject(AnalyticsService);
@@ -186,30 +178,118 @@ export class DashboardPageComponent implements OnInit {
   notifications: ReminderRecord[] = [];
   loading = true;
   error = '';
+  metricCards: Array<{ label: string; value: string; trend: string; icon: string; positive: boolean }> = [];
 
-  private readonly statusColors = ['#64748b', '#0f766e', '#14b8a6', '#d89b37', '#0b5f58', '#be123c', '#94a3b8', '#5eead4'];
+  trendChart: TrendChartKey = 'monthly';
+  pieChart: PieChartKey = 'stages';
+
+  readonly trendOptions: ChartOption<TrendChartKey>[] = [
+    { key: 'monthly', label: 'Applications per month', description: 'Monthly application volume' },
+    { key: 'conversion', label: 'Applications vs interviews', description: 'Submitted applications and interviewed roles by month' },
+    { key: 'interviews', label: 'Interviews per month', description: 'Interview volume over time' },
+    { key: 'conversionRate', label: 'Conversion rate trend', description: 'Share of applications reaching interviews' },
+    { key: 'cumulative', label: 'Cumulative applications', description: 'Running total of applications submitted' },
+  ];
+
+  readonly pieOptions: ChartOption<PieChartKey>[] = [
+    { key: 'stages', label: 'Recruitment stages', description: 'Current application pipeline' },
+    { key: 'outcomes', label: 'Application outcomes', description: 'Terminal and active statuses' },
+    { key: 'employment', label: 'Employment type', description: 'Full-time, contract, and other types' },
+    { key: 'interviewReach', label: 'Interview reach', description: 'Applications that reached an interview' },
+    { key: 'responseSplit', label: 'Response split', description: 'Applications that moved beyond wishlist' },
+    { key: 'reminders', label: 'Reminder health', description: 'Upcoming versus overdue reminders' },
+  ];
+
+  private readonly palette = ['#0f766e', '#0b5f58', '#14b8a6', '#d89b37', '#be123c', '#64748b', '#94a3b8', '#5eead4'];
   private readonly outcomeColors = ['#0b5f58', '#be123c', '#94a3b8', '#0f766e'];
 
-  monthlyChart: ChartData<'line'> = { labels: [], datasets: [{ data: [], label: 'Applications', borderColor: '#0f766e', backgroundColor: '#0f766e22', tension: 0.35, fill: true }] };
-  stageChart: ChartData<'doughnut'> = { labels: [], datasets: [{ data: [], backgroundColor: this.statusColors }] };
-  outcomeChart: ChartData<'doughnut'> = { labels: [], datasets: [{ data: [], backgroundColor: this.outcomeColors }] };
-  conversionChart: ChartData<'bar'> = { labels: [], datasets: [{ data: [], label: 'Applications', backgroundColor: '#0f766e' }, { data: [], label: 'Interviewed', backgroundColor: '#d89b37' }] };
-  employmentChart: ChartData<'doughnut'> = { labels: [], datasets: [{ data: [], backgroundColor: ['#0f766e', '#0b5f58', '#d89b37', '#be123c', '#94a3b8'] }] };
+  private monthlyChart: ChartData<'line'> = this.emptyLine('Applications');
+  private interviewsChart: ChartData<'line'> = this.emptyLine('Interviews');
+  private conversionRateChart: ChartData<'line'> = this.emptyLine('Conversion %');
+  private cumulativeChart: ChartData<'line'> = this.emptyLine('Cumulative');
+  private conversionChart: ChartData<'bar'> = {
+    labels: [],
+    datasets: [
+      { data: [], label: 'Applications', backgroundColor: '#0f766e' },
+      { data: [], label: 'Interviewed', backgroundColor: '#d89b37' },
+    ],
+  };
 
-  lineOptions: ChartOptions<'line'> = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
-  doughnutOptions: ChartOptions<'doughnut'> = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } };
-  barOptions: ChartOptions<'bar'> = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } };
+  private pieCharts: Record<PieChartKey, ChartData<'doughnut'>> = {
+    stages: this.emptyDoughnut(),
+    outcomes: this.emptyDoughnut(),
+    employment: this.emptyDoughnut(),
+    interviewReach: this.emptyDoughnut(),
+    responseSplit: this.emptyDoughnut(),
+    reminders: this.emptyDoughnut(),
+  };
+
+  activeTrendLine: ChartData<'line'> = this.emptyLine('Applications');
+  activeTrendBar: ChartData<'bar'> = this.conversionChart;
+  activePieData: ChartData<'doughnut'> = this.emptyDoughnut();
+
+  lineOptions: ChartOptions<'line'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true } },
+  };
+  doughnutOptions: ChartOptions<'doughnut'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: { padding: 8 },
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { boxWidth: 10, boxHeight: 10, padding: 12, font: { size: 11 } },
+      },
+    },
+  };
+  barOptions: ChartOptions<'bar'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12 } } },
+    scales: { y: { beginAtZero: true } },
+  };
 
   get hasNoData(): boolean {
     return !this.analytics?.metrics.totalApplications;
   }
 
+  get trendIsBar(): boolean {
+    return this.trendChart === 'conversion';
+  }
+
+  get activeTrend(): ChartOption<TrendChartKey> {
+    return this.trendOptions.find(option => option.key === this.trendChart) ?? this.trendOptions[0];
+  }
+
+  get activePie(): ChartOption<PieChartKey> {
+    return this.pieOptions.find(option => option.key === this.pieChart) ?? this.pieOptions[0];
+  }
+
   ngOnInit(): void {
     this.load();
     this.reminderService.notifications().subscribe({
-      next: items => this.notifications = items,
+      next: items => {
+        this.notifications = items;
+        this.pieCharts.reminders = this.toDoughnut(this.reminderPoints(items), ['#d89b37', '#0f766e', '#94a3b8']);
+        if (this.pieChart === 'reminders') {
+          this.activePieData = this.pieCharts.reminders;
+        }
+      },
       error: () => this.notifications = [],
     });
+  }
+
+  selectTrend(value: TrendChartKey): void {
+    this.trendChart = value;
+    this.syncTrendChart();
+  }
+
+  selectPie(value: PieChartKey): void {
+    this.pieChart = value;
+    this.activePieData = this.cloneDoughnut(this.pieCharts[value]);
   }
 
   load(): void {
@@ -220,7 +300,12 @@ export class DashboardPageComponent implements OnInit {
       this.toIsoDate(value.from) || undefined,
       this.toIsoDate(value.to) || undefined,
     ).subscribe({
-      next: response => { this.analytics = response; this.buildCharts(response); this.loading = false; },
+      next: response => {
+        this.analytics = response;
+        this.metricCards = this.buildMetricCards(response);
+        this.buildCharts(response);
+        this.loading = false;
+      },
       error: () => { this.error = 'Analytics could not be loaded.'; this.loading = false; },
     });
   }
@@ -238,11 +323,169 @@ export class DashboardPageComponent implements OnInit {
     return `${year}-${month}-${day}`;
   }
 
-  buildCharts(response: AnalyticsResponse): void {
-    this.monthlyChart = { labels: response.monthlyApplications.map(item => item.label), datasets: [{ data: response.monthlyApplications.map(item => item.value), label: 'Applications', borderColor: '#0f766e', backgroundColor: '#0f766e22', tension: 0.35, fill: true }] };
-    this.stageChart = { labels: response.recruitmentStages.map(item => item.label), datasets: [{ data: response.recruitmentStages.map(item => item.value), backgroundColor: this.statusColors }] };
-    this.outcomeChart = { labels: response.applicationOutcomes.map(item => item.label), datasets: [{ data: response.applicationOutcomes.map(item => item.value), backgroundColor: this.outcomeColors }] };
-    this.conversionChart = { labels: response.interviewConversion.map(item => item.label), datasets: [{ data: response.interviewConversion.map(item => item.applications), label: 'Applications', backgroundColor: '#0f766e' }, { data: response.interviewConversion.map(item => item.interviews), label: 'Interviewed', backgroundColor: '#d89b37' }] };
-    this.employmentChart = { labels: response.employmentTypes.map(item => item.label), datasets: [{ data: response.employmentTypes.map(item => item.value), backgroundColor: ['#0f766e', '#0b5f58', '#d89b37', '#be123c', '#94a3b8'] }] };
+  private buildMetricCards(response: AnalyticsResponse): Array<{ label: string; value: string; trend: string; icon: string; positive: boolean }> {
+    const metrics = response.metrics;
+    return [
+      { label: 'Total applications', value: metrics.totalApplications.toString(), trend: 'In selected range', icon: 'work_outline', positive: true },
+      { label: 'Active applications', value: metrics.activeApplications.toString(), trend: 'Not hired, rejected, or withdrawn', icon: 'pending_actions', positive: true },
+      { label: 'Interviews scheduled', value: metrics.interviewsScheduled.toString(), trend: 'In selected range', icon: 'event', positive: true },
+      { label: 'Hired', value: metrics.offersReceived.toString(), trend: 'Reached hired status', icon: 'workspace_premium', positive: true },
+      { label: 'Rejections', value: metrics.rejections.toString(), trend: 'In selected range', icon: 'cancel', positive: false },
+      { label: 'Pending follow-ups', value: metrics.pendingFollowUps.toString(), trend: 'Pending or overdue', icon: 'notifications_none', positive: false },
+      { label: 'Response rate', value: `${metrics.applicationResponseRate}%`, trend: 'Moved beyond wishlist', icon: 'trending_up', positive: true },
+      { label: 'Interview conversion', value: `${metrics.interviewConversionRate}%`, trend: 'Applications reaching interviews', icon: 'swap_horiz', positive: true },
+    ];
+  }
+
+  private buildCharts(response: AnalyticsResponse): void {
+    const monthlyLabels = response.monthlyApplications.map(item => item.label);
+    const monthlyValues = response.monthlyApplications.map(item => item.value);
+    const conversionLabels = response.interviewConversion.map(item => item.label);
+
+    this.monthlyChart = {
+      labels: monthlyLabels,
+      datasets: [{ data: monthlyValues, label: 'Applications', borderColor: '#0f766e', backgroundColor: '#0f766e22', tension: 0.35, fill: true }],
+    };
+    this.interviewsChart = {
+      labels: conversionLabels,
+      datasets: [{
+        data: response.interviewConversion.map(item => item.interviews),
+        label: 'Interviews',
+        borderColor: '#d89b37',
+        backgroundColor: '#d89b3722',
+        tension: 0.35,
+        fill: true,
+      }],
+    };
+    this.conversionRateChart = {
+      labels: conversionLabels,
+      datasets: [{
+        data: response.interviewConversion.map(item => item.conversionRate),
+        label: 'Conversion %',
+        borderColor: '#0b5f58',
+        backgroundColor: '#0b5f5822',
+        tension: 0.35,
+        fill: true,
+      }],
+    };
+    this.cumulativeChart = {
+      labels: monthlyLabels,
+      datasets: [{
+        data: this.runningTotal(monthlyValues),
+        label: 'Cumulative',
+        borderColor: '#14b8a6',
+        backgroundColor: '#14b8a622',
+        tension: 0.35,
+        fill: true,
+      }],
+    };
+    this.conversionChart = {
+      labels: conversionLabels,
+      datasets: [
+        { data: response.interviewConversion.map(item => item.applications), label: 'Applications', backgroundColor: '#0f766e' },
+        { data: response.interviewConversion.map(item => item.interviews), label: 'Interviewed', backgroundColor: '#d89b37' },
+      ],
+    };
+
+    const total = response.metrics.totalApplications;
+    const interviewed = Math.round((response.metrics.interviewConversionRate / 100) * total);
+    const responded = Math.round((response.metrics.applicationResponseRate / 100) * total);
+
+    this.pieCharts = {
+      stages: this.toDoughnut(response.recruitmentStages, this.palette),
+      outcomes: this.toDoughnut(response.applicationOutcomes, this.outcomeColors),
+      employment: this.toDoughnut(response.employmentTypes, this.palette),
+      interviewReach: this.toDoughnut([
+        { label: 'Interviewed', value: interviewed },
+        { label: 'Not interviewed', value: Math.max(total - interviewed, 0) },
+      ], ['#0f766e', '#94a3b8']),
+      responseSplit: this.toDoughnut([
+        { label: 'Responded', value: responded },
+        { label: 'No response yet', value: Math.max(total - responded, 0) },
+      ], ['#14b8a6', '#cbd5e1']),
+      reminders: this.toDoughnut(this.reminderPoints(this.notifications), ['#d89b37', '#0f766e', '#94a3b8']),
+    };
+
+    this.syncTrendChart();
+    this.activePieData = this.cloneDoughnut(this.pieCharts[this.pieChart]);
+  }
+
+  private syncTrendChart(): void {
+    switch (this.trendChart) {
+      case 'conversion':
+        this.activeTrendBar = {
+          labels: [...(this.conversionChart.labels ?? [])],
+          datasets: this.conversionChart.datasets.map(dataset => ({ ...dataset, data: [...dataset.data] })),
+        };
+        break;
+      case 'interviews':
+        this.activeTrendLine = this.cloneLine(this.interviewsChart);
+        break;
+      case 'conversionRate':
+        this.activeTrendLine = this.cloneLine(this.conversionRateChart);
+        break;
+      case 'cumulative':
+        this.activeTrendLine = this.cloneLine(this.cumulativeChart);
+        break;
+      default:
+        this.activeTrendLine = this.cloneLine(this.monthlyChart);
+        break;
+    }
+  }
+
+  private reminderPoints(items: ReminderRecord[]): AnalyticsPoint[] {
+    const overdue = items.filter(item => item.timingState === 'OVERDUE').length;
+    const upcoming = items.filter(item => item.timingState !== 'OVERDUE').length;
+    return [
+      { label: 'Overdue', value: overdue },
+      { label: 'Upcoming', value: upcoming },
+    ].filter(point => point.value > 0);
+  }
+
+  private runningTotal(values: number[]): number[] {
+    let total = 0;
+    return values.map(value => {
+      total += value;
+      return total;
+    });
+  }
+
+  private toDoughnut(points: AnalyticsPoint[], colors: string[]): ChartData<'doughnut'> {
+    const visible = points.filter(point => point.value > 0);
+    return {
+      labels: visible.map(point => point.label),
+      datasets: [{
+        data: visible.map(point => point.value),
+        backgroundColor: colors,
+        borderWidth: 0,
+        hoverOffset: 4,
+      }],
+    };
+  }
+
+  private cloneDoughnut(data: ChartData<'doughnut'>): ChartData<'doughnut'> {
+    return {
+      labels: [...(data.labels ?? [])],
+      datasets: data.datasets.map(dataset => ({
+        ...dataset,
+        data: [...dataset.data],
+        backgroundColor: Array.isArray(dataset.backgroundColor) ? [...dataset.backgroundColor] : dataset.backgroundColor,
+      })),
+    };
+  }
+
+  private cloneLine(data: ChartData<'line'>): ChartData<'line'> {
+    return {
+      labels: [...(data.labels ?? [])],
+      datasets: data.datasets.map(dataset => ({ ...dataset, data: [...dataset.data] })),
+    };
+  }
+
+  private emptyLine(label: string): ChartData<'line'> {
+    return { labels: [], datasets: [{ data: [], label, borderColor: '#0f766e', backgroundColor: '#0f766e22', tension: 0.35, fill: true }] };
+  }
+
+  private emptyDoughnut(): ChartData<'doughnut'> {
+    return { labels: [], datasets: [{ data: [], backgroundColor: this.palette, borderWidth: 0 }] };
   }
 }

@@ -8,6 +8,7 @@ export interface AssessmentRecord {
   title: string;
   assessmentType: string;
   instructions?: string;
+  linkUrl?: string;
   dueAt?: string;
   completedAt?: string;
   status: AssessmentStatus;

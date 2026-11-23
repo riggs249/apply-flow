@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+/*
+  Map HanapTracker design tokens into Tailwind theme utilities
+  (e.g. bg-af-accent, text-af-text-muted, rounded-af, shadow-af).
+*/
+/* Tailwind preflight resets heading weight; keep the browser-default bold headings. */
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: bold;
+  }
+}
+
+@theme {
+  --color-af-accent: var(--af-accent);
+  --color-af-accent-hover: var(--af-accent-hover);
+  --color-af-accent-soft: var(--af-accent-soft);
+  --color-af-accent-muted: var(--af-accent-muted);
+
+  --color-af-sidebar-bg: var(--af-sidebar-bg);
+  --color-af-sidebar-text: var(--af-sidebar-text);
+  --color-af-sidebar-hover: var(--af-sidebar-hover);
+  --color-af-sidebar-active: var(--af-sidebar-active);
+  --color-af-sidebar-border: var(--af-sidebar-border);
+
+  --color-af-canvas: var(--af-canvas);
+  --color-af-canvas-glow: var(--af-canvas-glow);
+  --color-af-surface: var(--af-surface);
+  --color-af-border: var(--af-border);
+  --color-af-border-soft: var(--af-border-soft);
+  --color-af-divider: var(--af-divider);
+
+  --color-af-text: var(--af-text);
+  --color-af-text-secondary: var(--af-text-secondary);
+  --color-af-text-muted: var(--af-text-muted);
+  --color-af-text-faint: var(--af-text-faint);
+
+  --color-af-success: var(--af-success);
+  --color-af-success-soft: var(--af-success-soft);
+  --color-af-success-deep: var(--af-success-deep);
+  --color-af-amber: var(--af-amber);
+  --color-af-amber-soft: var(--af-amber-soft);
+  --color-af-amber-dot: var(--af-amber-dot);
+  --color-af-danger: var(--af-danger);
+  --color-af-danger-soft: var(--af-danger-soft);
+  --color-af-danger-border: var(--af-danger-border);
+  --color-af-slate: var(--af-slate);
+  --color-af-slate-soft: var(--af-slate-soft);
+
+  --radius-af-sm: var(--af-radius-sm);
+  --radius-af: var(--af-radius);
+  --radius-af-lg: var(--af-radius-lg);
+
+  --shadow-af: var(--af-shadow);
+
+  --font-af: var(--af-font);
+  --font-display: var(--af-font-display);
+}

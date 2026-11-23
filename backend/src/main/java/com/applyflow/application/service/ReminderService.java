@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public interface ReminderService {
     List<ReminderResponse> findAll(UUID userId);
+    List<ReminderResponse> findByApplicationId(UUID userId, UUID applicationId);
     ReminderResponse findById(UUID userId, UUID reminderId);
     ReminderResponse create(UUID userId, ReminderCreateRequest request);
     ReminderResponse update(UUID userId, UUID reminderId, ReminderUpdateRequest request);

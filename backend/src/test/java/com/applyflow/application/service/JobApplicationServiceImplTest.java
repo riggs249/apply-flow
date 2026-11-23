@@ -6,8 +6,10 @@ import com.applyflow.application.entity.ProcessStage;
 import com.applyflow.application.mapper.JobApplicationMapper;
 import com.applyflow.application.repository.ApplicationActivityRepository;
 import com.applyflow.application.repository.JobApplicationRepository;
+import com.applyflow.application.repository.ResumeRepository;
 import com.applyflow.common.exception.ResourceNotFoundException;
 import com.applyflow.company.repository.CompanyRepository;
+import com.applyflow.notification.NotificationDispatchService;
 import com.applyflow.user.entity.User;
 import com.applyflow.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -37,10 +39,16 @@ class JobApplicationServiceImplTest {
     private UserRepository userRepository;
 
     @Mock
+    private ResumeRepository resumeRepository;
+
+    @Mock
     private JobApplicationMapper mapper;
 
     @Mock
     private ApplicationActivityRepository activityRepository;
+
+    @Mock
+    private NotificationDispatchService notificationDispatchService;
 
     @InjectMocks
     private JobApplicationServiceImpl service;

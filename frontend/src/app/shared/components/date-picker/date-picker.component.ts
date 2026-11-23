@@ -30,44 +30,45 @@ interface CalendarDay {
       multi: true,
     },
   ],
+  host: { class: 'relative block min-w-[150px] flex-[0_1_168px]' },
   template: `
-    <div class="dp" [class.open]="open()">
+    <div class="relative w-full">
       <button
         type="button"
-        class="dp-trigger"
+        class="flex h-[42px] w-full cursor-pointer items-center justify-between gap-2 rounded-af-sm border border-af-border bg-af-surface px-3 text-[.82rem] text-af-text disabled:cursor-not-allowed disabled:opacity-[.55]"
         [disabled]="disabled"
         [attr.aria-label]="placeholder"
         (click)="toggle()"
       >
-        <span [class.placeholder]="!value">{{ displayLabel() }}</span>
-        <mat-icon>calendar_today</mat-icon>
+        <span [class.text-af-text-faint]="!value">{{ displayLabel() }}</span>
+        <mat-icon class="!size-[18px] !text-[18px] text-af-text-muted">calendar_today</mat-icon>
       </button>
 
       @if (open()) {
-        <div class="dp-popover" role="dialog" aria-label="Choose date">
-          <div class="dp-header">
-            <button type="button" class="nav" (click)="shiftMonth(-1)" aria-label="Previous month">
-              <mat-icon>chevron_left</mat-icon>
+        <div
+          class="absolute left-0 top-[calc(100%+.4rem)] z-40 w-[280px] rounded-af border border-af-border bg-af-surface p-3 shadow-[0_10px_30px_rgba(20,27,36,.12)]"
+          role="dialog"
+          aria-label="Choose date"
+        >
+          <div class="mb-[.65rem] flex items-center justify-between">
+            <button type="button" [class]="navClass" (click)="shiftMonth(-1)" aria-label="Previous month">
+              <mat-icon class="!size-[18px] !text-[18px]">chevron_left</mat-icon>
             </button>
-            <strong>{{ monthLabel() }}</strong>
-            <button type="button" class="nav" [disabled]="!canGoNext()" (click)="shiftMonth(1)" aria-label="Next month">
-              <mat-icon>chevron_right</mat-icon>
+            <strong class="text-[.85rem] font-[650] text-af-text">{{ monthLabel() }}</strong>
+            <button type="button" [class]="navClass" [disabled]="!canGoNext()" (click)="shiftMonth(1)" aria-label="Next month">
+              <mat-icon class="!size-[18px] !text-[18px]">chevron_right</mat-icon>
             </button>
           </div>
-          <div class="dp-weekdays">
+          <div class="grid grid-cols-[repeat(7,1fr)] gap-[.15rem]">
             @for (day of weekdays; track day) {
-              <span>{{ day }}</span>
+              <span class="py-1 text-center text-[.68rem] font-[650] text-af-text-faint">{{ day }}</span>
             }
           </div>
-          <div class="dp-grid">
+          <div class="grid grid-cols-[repeat(7,1fr)] gap-[.15rem]">
             @for (day of days(); track day.date.getTime()) {
               <button
                 type="button"
-                class="day"
-                [class.outside]="!day.inMonth"
-                [class.selected]="day.selected"
-                [class.today]="day.today && !day.selected"
-                [class.disabled]="day.disabled"
+                [class]="dayClass(day)"
                 [disabled]="day.disabled"
                 (click)="select(day.date)"
               >
@@ -75,135 +76,23 @@ interface CalendarDay {
               </button>
             }
           </div>
-          <div class="dp-footer">
-            <button type="button" class="text" (click)="clear()">Clear</button>
-            <button type="button" class="text accent" (click)="selectToday()">Today</button>
+          <div class="mt-[.55rem] flex justify-between border-t border-af-divider pt-[.55rem]">
+            <button type="button" [class]="textButtonClass + ' text-af-text-muted'" (click)="clear()">Clear</button>
+            <button type="button" [class]="textButtonClass + ' font-[650] text-af-accent'" (click)="selectToday()">Today</button>
           </div>
         </div>
       }
     </div>
   `,
-  styles: [`
-    :host { display: block; flex: 0 1 168px; min-width: 150px; position: relative; }
-    .dp { position: relative; width: 100%; }
-    .dp-trigger {
-      align-items: center;
-      background: var(--af-surface);
-      border: 1px solid var(--af-border);
-      border-radius: var(--af-radius-sm);
-      box-sizing: border-box;
-      color: var(--af-text);
-      cursor: pointer;
-      display: flex;
-      font: inherit;
-      font-size: .82rem;
-      gap: .5rem;
-      height: 42px;
-      justify-content: space-between;
-      padding: 0 .75rem;
-      width: 100%;
-    }
-    .dp-trigger:disabled { cursor: not-allowed; opacity: .55; }
-    .dp-trigger .placeholder { color: var(--af-text-faint); }
-    .dp-trigger mat-icon { color: var(--af-text-muted); font-size: 18px; height: 18px; width: 18px; }
-    .dp-popover {
-      background: var(--af-surface);
-      border: 1px solid var(--af-border);
-      border-radius: var(--af-radius);
-      box-shadow: 0 10px 30px rgba(20, 27, 36, .12);
-      left: 0;
-      padding: .75rem;
-      position: absolute;
-      top: calc(100% + .4rem);
-      width: 280px;
-      z-index: 40;
-    }
-    .dp-header {
-      align-items: center;
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: .65rem;
-    }
-    .dp-header strong { color: var(--af-text); font-size: .85rem; font-weight: 650; }
-    .nav {
-      align-items: center;
-      background: transparent;
-      border: 0;
-      border-radius: 6px;
-      color: var(--af-text-muted);
-      cursor: pointer;
-      display: inline-flex;
-      height: 28px;
-      justify-content: center;
-      width: 28px;
-    }
-    .nav:hover:not(:disabled) { background: var(--af-border-soft); color: var(--af-text); }
-    .nav:disabled { cursor: default; opacity: .35; }
-    .nav mat-icon { font-size: 18px; height: 18px; width: 18px; }
-    .dp-weekdays, .dp-grid {
-      display: grid;
-      gap: .15rem;
-      grid-template-columns: repeat(7, 1fr);
-    }
-    .dp-weekdays span {
-      color: var(--af-text-faint);
-      font-size: .68rem;
-      font-weight: 650;
-      padding: .25rem 0;
-      text-align: center;
-    }
-    .day {
-      aspect-ratio: 1;
-      background: transparent;
-      border: 0;
-      border-radius: 8px;
-      color: var(--af-text-secondary);
-      cursor: pointer;
-      font: inherit;
-      font-size: .78rem;
-    }
-    .day:hover:not(:disabled) { background: var(--af-accent-soft); color: var(--af-accent); }
-    .day.outside { color: var(--af-text-faint); opacity: .55; }
-    .day.today { box-shadow: inset 0 0 0 1px var(--af-border); }
-    .day.selected {
-      background: var(--af-accent);
-      color: #fff;
-      font-weight: 650;
-    }
-    .day.disabled,
-    .day:disabled {
-      color: var(--af-text-faint);
-      cursor: not-allowed;
-      opacity: .4;
-    }
-    .day.disabled:hover,
-    .day:disabled:hover {
-      background: transparent;
-      color: var(--af-text-faint);
-    }
-    .dp-footer {
-      border-top: 1px solid var(--af-divider);
-      display: flex;
-      justify-content: space-between;
-      margin-top: .55rem;
-      padding-top: .55rem;
-    }
-    .text {
-      background: transparent;
-      border: 0;
-      color: var(--af-text-muted);
-      cursor: pointer;
-      font: inherit;
-      font-size: .75rem;
-      padding: .2rem .35rem;
-    }
-    .text.accent { color: var(--af-accent); font-weight: 650; }
-  `],
 })
 export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
   private readonly host = inject(ElementRef<HTMLElement>);
 
   @Input() placeholder = 'Pick a date';
+
+  readonly navClass =
+    'inline-flex size-7 cursor-pointer items-center justify-center rounded-md border-0 bg-transparent text-af-text-muted enabled:hover:bg-af-border-soft enabled:hover:text-af-text disabled:cursor-default disabled:opacity-35';
+  readonly textButtonClass = 'cursor-pointer border-0 bg-transparent px-[.35rem] py-[.2rem] text-[.75rem]';
 
   readonly weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
   readonly open = signal(false);
@@ -314,6 +203,22 @@ export class DatePickerComponent implements ControlValueAccessor, OnDestroy {
     this.onTouched();
     this.open.set(false);
     this.rebuild();
+  }
+
+  dayClass(day: CalendarDay): string {
+    const base = 'aspect-square rounded-lg border-0 text-[.78rem]';
+    if (day.disabled) {
+      return `${base} cursor-not-allowed bg-transparent text-af-text-faint opacity-40`;
+    }
+    const classes = [base, 'cursor-pointer', 'hover:bg-af-accent-soft', 'hover:text-af-accent'];
+    if (day.selected) {
+      classes.push('bg-af-accent', 'font-[650]', 'text-white');
+    } else {
+      classes.push('bg-transparent', day.inMonth ? 'text-af-text-secondary' : 'text-af-text-faint');
+    }
+    if (!day.inMonth) classes.push('opacity-55');
+    if (day.today && !day.selected) classes.push('shadow-[inset_0_0_0_1px_var(--af-border)]');
+    return classes.join(' ');
   }
 
   displayLabel(): string {

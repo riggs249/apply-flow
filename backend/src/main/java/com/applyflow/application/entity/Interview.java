@@ -1,7 +1,9 @@
 package com.applyflow.application.entity;
 
 import com.applyflow.common.persistence.BaseEntity;
+import com.applyflow.notification.LeadEmailMarks;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -11,6 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.Objects;
 
 @Entity
 @Table(name = "interviews")
@@ -45,6 +48,9 @@ public class Interview extends BaseEntity {
     @Column(columnDefinition = "text")
     private String reflection;
 
+    @Embedded
+    private LeadEmailMarks leadEmails = new LeadEmailMarks();
+
     protected Interview() {
     }
 
@@ -60,11 +66,15 @@ public class Interview extends BaseEntity {
         this.preparationNotes = preparationNotes;
         this.reflection = reflection;
         this.outcome = outcome;
+        this.leadEmails = new LeadEmailMarks();
     }
 
     public void update(Instant scheduledAt, String interviewType, String interviewer, String interviewerContact,
                        String locationOrMeetingUrl, String preparationNotes, String reflection,
                        InterviewOutcome outcome) {
+        if (!Objects.equals(this.scheduledAt, scheduledAt)) {
+            leadEmails().clear();
+        }
         this.scheduledAt = scheduledAt;
         this.interviewType = interviewType;
         this.interviewer = interviewer;
@@ -73,6 +83,13 @@ public class Interview extends BaseEntity {
         this.preparationNotes = preparationNotes;
         this.reflection = reflection;
         this.outcome = outcome;
+    }
+
+    public LeadEmailMarks leadEmails() {
+        if (leadEmails == null) {
+            leadEmails = new LeadEmailMarks();
+        }
+        return leadEmails;
     }
 
     public JobApplication getApplication() { return application; }

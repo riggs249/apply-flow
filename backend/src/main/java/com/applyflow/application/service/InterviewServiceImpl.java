@@ -6,6 +6,9 @@ import com.applyflow.application.entity.JobApplication;
 import com.applyflow.application.repository.InterviewRepository;
 import com.applyflow.application.repository.JobApplicationRepository;
 import com.applyflow.common.exception.ResourceNotFoundException;
+import com.applyflow.notification.NotificationDispatchService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,18 +18,35 @@ import java.util.UUID;
 @Service
 @Transactional
 public class InterviewServiceImpl implements InterviewService {
+    private static final Logger log = LoggerFactory.getLogger(InterviewServiceImpl.class);
+
     private final InterviewRepository interviewRepository;
     private final JobApplicationRepository applicationRepository;
+    private final NotificationDispatchService notificationDispatchService;
 
-    public InterviewServiceImpl(InterviewRepository interviewRepository, JobApplicationRepository applicationRepository) {
+    public InterviewServiceImpl(
+            InterviewRepository interviewRepository,
+            JobApplicationRepository applicationRepository,
+            NotificationDispatchService notificationDispatchService
+    ) {
         this.interviewRepository = interviewRepository;
         this.applicationRepository = applicationRepository;
+        this.notificationDispatchService = notificationDispatchService;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<InterviewResponse> findAll(UUID userId) {
         return interviewRepository.findAllOwned(userId).stream().map(this::toResponse).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<InterviewResponse> findByApplicationId(UUID userId, UUID applicationId) {
+        getApplication(userId, applicationId);
+        return interviewRepository.findOwnedByApplicationId(userId, applicationId).stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     @Override
@@ -41,7 +61,13 @@ public class InterviewServiceImpl implements InterviewService {
         Interview interview = new Interview(application, request.scheduledAt(), request.interviewType().trim(),
                 request.interviewer(), request.interviewerContact(), request.locationOrMeetingUrl(),
                 request.preparationNotes(), request.reflection(), request.outcome());
-        return toResponse(interviewRepository.save(interview));
+        Interview saved = interviewRepository.save(interview);
+        try {
+            notificationDispatchService.sendInterviewScheduled(application.getUser(), saved);
+        } catch (RuntimeException exception) {
+            log.warn("Failed to email interview {}: {}", saved.getId(), exception.getMessage());
+        }
+        return toResponse(saved);
     }
 
     @Override

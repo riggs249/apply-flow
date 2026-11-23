@@ -10,6 +10,9 @@ spring:
 
 app:
   upload-dir: ./target/test-uploads
+  storage:
+    type: local
+    upload-dir: ./target/test-uploads
   security:
     jwt-secret: test-secret-test-secret-test-secret-test-secret
     access-token-minutes: 15

@@ -2,15 +2,19 @@ import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { Subject, catchError, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
+import { TableSkeletonComponent } from '../../shared/components/table-skeleton/table-skeleton.component';
+import { ConfirmDialogService } from '../../shared/confirm-dialog/confirm-dialog.service';
+import { scrollToTop } from '../../shared/utils/scroll';
 import { CompanyRecord } from './company.models';
 import { CompanyService } from './company.service';
 
 @Component({
   selector: 'app-company-page',
   standalone: true,
-  imports: [ReactiveFormsModule, MatIconModule, PageHeaderComponent],
+  imports: [ReactiveFormsModule, MatIconModule, PageHeaderComponent, TableSkeletonComponent],
   template: `
     <app-page-header title="Companies" description="Keep your target companies organized in one place.">
       <button class="primary-button" type="button" (click)="openCreate()"><mat-icon>add</mat-icon> Add company</button>
@@ -24,8 +28,8 @@ import { CompanyService } from './company.service';
     @if (error) { <div class="error">{{ error }}</div> }
 
     @if (showForm) {
-      <form class="form-card" [formGroup]="form" (ngSubmit)="submit()">
-        <h2>{{ editingId ? 'Edit company' : 'Add company' }}</h2>
+      <form class="form-card mb-5 [&_label]:mb-4" [formGroup]="form" (ngSubmit)="submit()">
+        <h2 class="!mb-5">{{ editingId ? 'Edit company' : 'Add company' }}</h2>
         <div class="fields two">
           <label>Name<input formControlName="name" placeholder="Acme Corp" />@if (form.controls.name.touched && form.controls.name.invalid) { <small>Name is required.</small> }</label>
           <label>Website<input type="url" formControlName="website" placeholder="https://..." /></label>
@@ -35,32 +39,54 @@ import { CompanyService } from './company.service';
           <label>Location<input formControlName="location" placeholder="Remote / New York" /></label>
         </div>
         <label>Notes<textarea rows="3" formControlName="notes" placeholder="Culture notes, contacts, or research"></textarea></label>
-        <div class="actions">
+        <div class="flex justify-end gap-[.65rem] border-t border-af-divider pt-4">
           <button class="secondary-button" type="button" (click)="closeForm()">Cancel</button>
           <button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Saving…' : 'Save company' }}</button>
         </div>
       </form>
     }
 
-    @if (loading) { <div class="state">Loading companies…</div> }
+    @if (loading && !companies.length) {
+      <app-table-skeleton
+        label="Loading companies…"
+        [rows]="7"
+        [columns]="[
+          { width: '52%', secondary: '68%' },
+          '58%',
+          '48%',
+          '28%',
+          '34%'
+        ]"
+      />
+    }
     @else if (!companies.length) {
       <div class="empty"><mat-icon>business</mat-icon><h2>No companies yet</h2><p>Add a company before creating job applications.</p><button class="primary-button" type="button" (click)="openCreate()">Add company</button></div>
     }
     @else {
-      <section class="table-card">
+      <section class="table-card" [class.is-refreshing]="loading">
         <div class="table-scroll">
           <table>
-            <thead><tr><th>Company</th><th>Industry</th><th>Location</th><th>Website</th><th></th></tr></thead>
+            <thead>
+              <tr>
+                <th><button type="button" class="sort-header" [class.is-active]="sortBy === 'name'" (click)="sort('name')">Company <mat-icon>{{ sortIcon('name') }}</mat-icon></button></th>
+                <th><button type="button" class="sort-header" [class.is-active]="sortBy === 'industry'" (click)="sort('industry')">Industry <mat-icon>{{ sortIcon('industry') }}</mat-icon></button></th>
+                <th><button type="button" class="sort-header" [class.is-active]="sortBy === 'location'" (click)="sort('location')">Location <mat-icon>{{ sortIcon('location') }}</mat-icon></button></th>
+                <th><button type="button" class="sort-header" [class.is-active]="sortBy === 'website'" (click)="sort('website')">Website <mat-icon>{{ sortIcon('website') }}</mat-icon></button></th>
+                <th></th>
+              </tr>
+            </thead>
             <tbody>
               @for (company of companies; track company.id) {
                 <tr>
-                  <td><strong>{{ company.name }}</strong>@if (company.notes) { <small>{{ company.notes }}</small> }</td>
-                  <td>{{ company.industry || '—' }}</td>
-                  <td>{{ company.location || '—' }}</td>
-                  <td>@if (company.website) { <a [href]="company.website" target="_blank" rel="noopener noreferrer">Visit</a> } @else { — }</td>
-                  <td class="row-actions">
-                    <button type="button" class="text-button" (click)="edit(company)">Edit</button>
-                    <button type="button" class="danger-text" (click)="deleteCompany(company)">Delete</button>
+                  <td class="align-middle"><strong>{{ company.name }}</strong>@if (company.notes) { <small class="max-w-[28rem] truncate">{{ company.notes }}</small> }</td>
+                  <td class="align-middle">{{ company.industry || '—' }}</td>
+                  <td class="align-middle">{{ company.location || '—' }}</td>
+                  <td class="align-middle">@if (company.website) { <a [href]="company.website" target="_blank" rel="noopener noreferrer">Visit</a> } @else { — }</td>
+                  <td class="align-middle">
+                    <div class="flex items-center justify-end gap-3">
+                      <button type="button" class="text-button" (click)="edit(company)">Edit</button>
+                      <button type="button" class="danger-text" (click)="deleteCompany(company)">Delete</button>
+                    </div>
                   </td>
                 </tr>
               }
@@ -78,29 +104,13 @@ import { CompanyService } from './company.service';
       </section>
     }
   `,
-  styles: [`
-    .form-card { margin-bottom: 1.25rem; }
-    .form-card h2 { margin: 0 0 1.25rem; }
-    .form-card label { margin-bottom: 1rem; }
-    .actions {
-      border-top: 1px solid var(--af-divider);
-      display: flex;
-      gap: .65rem;
-      justify-content: flex-end;
-      padding-top: 1rem;
-    }
-    td small {
-      max-width: 28rem;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-  `],
 })
 export class CompanyPageComponent implements OnInit {
   private readonly service = inject(CompanyService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly fb = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly reload$ = new Subject<number>();
 
   readonly filters = this.fb.nonNullable.group({ query: '', industry: '' });
   readonly form = this.fb.nonNullable.group({
@@ -120,6 +130,8 @@ export class CompanyPageComponent implements OnInit {
   page = 0;
   totalPages = 0;
   totalElements = 0;
+  sortBy = 'name';
+  direction: 'asc' | 'desc' = 'asc';
 
   ngOnInit(): void {
     this.filters.valueChanges.pipe(
@@ -130,31 +142,85 @@ export class CompanyPageComponent implements OnInit {
       this.page = 0;
       this.load();
     });
+
+    this.reload$.pipe(
+      tap(page => {
+        this.page = page;
+        this.loading = true;
+        this.error = '';
+      }),
+      switchMap(page => this.service.list({
+        ...this.filters.getRawValue(),
+        page,
+        sortBy: this.sortBy,
+        direction: this.direction,
+      }).pipe(
+        catchError(() => {
+          this.error = 'Companies could not be loaded. Please try again.';
+          this.loading = false;
+          return of(null);
+        }),
+      )),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe(response => {
+      if (!response) return;
+      this.companies = response.content;
+      this.totalPages = response.totalPages;
+      this.totalElements = response.totalElements;
+      this.loading = false;
+    });
+
     this.load();
   }
 
   load(page = this.page): void {
-    this.page = page;
-    this.loading = true;
-    this.error = '';
-    this.service.list({ ...this.filters.getRawValue(), page }).subscribe({
-      next: response => {
-        this.companies = response.content;
-        this.totalPages = response.totalPages;
-        this.totalElements = response.totalElements;
-        this.loading = false;
-      },
-      error: () => {
-        this.error = 'Companies could not be loaded. Please try again.';
-        this.loading = false;
-      },
+    this.reload$.next(page);
+  }
+
+  sort(column: string): void {
+    if (this.sortBy === column) {
+      this.direction = this.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortBy = column;
+      this.direction = 'asc';
+    }
+    this.companies = this.sortRows(this.companies);
+    if (this.totalPages <= 1) return;
+    this.load(0);
+  }
+
+  sortIcon(column: string): string {
+    if (this.sortBy !== column) return 'unfold_more';
+    return this.direction === 'asc' ? 'arrow_upward' : 'arrow_downward';
+  }
+
+  private sortRows(rows: CompanyRecord[]): CompanyRecord[] {
+    const dir = this.direction === 'asc' ? 1 : -1;
+    return [...rows].sort((a, b) => {
+      const av = this.sortValue(a);
+      const bv = this.sortValue(b);
+      if (!av && !bv) return 0;
+      if (!av) return 1;
+      if (!bv) return -1;
+      return av.localeCompare(bv, undefined, { sensitivity: 'base', numeric: true }) * dir;
     });
+  }
+
+  private sortValue(row: CompanyRecord): string {
+    switch (this.sortBy) {
+      case 'name': return row.name ?? '';
+      case 'industry': return row.industry ?? '';
+      case 'location': return row.location ?? '';
+      case 'website': return row.website ?? '';
+      default: return '';
+    }
   }
 
   openCreate(): void {
     this.editingId = undefined;
     this.form.reset({ name: '', website: '', industry: '', location: '', notes: '' });
     this.showForm = true;
+    scrollToTop();
   }
 
   edit(company: CompanyRecord): void {
@@ -167,6 +233,7 @@ export class CompanyPageComponent implements OnInit {
       notes: company.notes ?? '',
     });
     this.showForm = true;
+    scrollToTop();
   }
 
   closeForm(): void {
@@ -204,10 +271,15 @@ export class CompanyPageComponent implements OnInit {
   }
 
   deleteCompany(company: CompanyRecord): void {
-    if (!confirm(`Delete ${company.name}? Applications linked to it may block deletion.`)) return;
-    this.service.delete(company.id).subscribe({
-      next: () => this.load(),
-      error: () => { this.error = 'Company could not be deleted.'; },
+    this.confirmDialog.confirm({
+      title: 'Delete company',
+      message: `Delete ${company.name}? Applications linked to it may block deletion.`,
+    }).subscribe(confirmed => {
+      if (!confirmed) return;
+      this.service.delete(company.id).subscribe({
+        next: () => this.load(),
+        error: () => { this.error = 'Company could not be deleted.'; },
+      });
     });
   }
 }
