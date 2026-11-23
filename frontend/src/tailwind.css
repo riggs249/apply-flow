@@ -59,4 +59,5 @@
   --shadow-af: var(--af-shadow);
 
   --font-af: var(--af-font);
+  --font-display: var(--af-font-display);
 }

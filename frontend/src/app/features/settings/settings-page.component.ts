@@ -23,99 +23,90 @@ import { NotificationToggleRowComponent } from './notification-toggle-row.compon
   template: `
     <app-page-header title="Settings" description="Manage your profile and application preferences." />
 
-    <section class="grid grid-cols-2 gap-4 max-[800px]:grid-cols-[1fr]">
-      <article class="panel">
-        <div class="panel-heading mb-[1.1rem]"><h2>Profile</h2><p>Update how your name appears across HanapTracker.</p></div>
-        <div class="mb-4 flex items-center gap-[.8rem]">
-          <span class="flex size-10 items-center justify-center rounded-full bg-af-accent-soft text-[.75rem] font-bold text-af-accent">{{ user()?.initials || 'U' }}</span>
+    <section class="grid grid-cols-2 items-stretch gap-3 max-[800px]:grid-cols-1">
+      <article class="panel flex h-full flex-col !p-4">
+        <div class="panel-heading mb-3">
+          <div>
+            <h2>Profile</h2>
+            <p>How your name appears across HanapTracker.</p>
+          </div>
+        </div>
+        <div class="mb-3 flex items-center gap-2.5">
+          <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-af-accent-soft text-[.72rem] font-bold text-af-accent">{{ user()?.initials || 'U' }}</span>
           <div class="min-w-0">
-            <strong class="block truncate text-[.9rem] text-af-text">{{ user()?.displayName || 'Signed in' }}</strong>
-            <span class="mt-[.2rem] block truncate text-[.75rem] text-af-text-faint">{{ user()?.email || 'Email unavailable' }}</span>
+            <strong class="block truncate text-[.84rem] text-af-text">{{ user()?.displayName || 'Signed in' }}</strong>
+            <span class="mt-[.1rem] block truncate text-[.7rem] text-af-text-faint">{{ user()?.email || 'Email unavailable' }}</span>
           </div>
         </div>
         @if (profileError) {
-          <div class="mb-3 rounded-af-sm border border-af-danger-border bg-af-danger-soft p-[.7rem] text-[.78rem] text-af-danger">{{ profileError }}</div>
+          <div class="mb-2.5 rounded-af-sm border border-af-danger-border bg-af-danger-soft px-2.5 py-2 text-[.74rem] text-af-danger">{{ profileError }}</div>
         }
-        <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
-          <label class="mb-3" for="displayName">Display name
-            <input id="displayName" type="text" formControlName="displayName" autocomplete="name" maxlength="100" />
+        <form class="flex flex-1 flex-col gap-2.5" [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+          <label class="!mb-0" for="displayName">Display name
+            <input class="!px-2.5 !py-2 !text-[.8rem]" id="displayName" type="text" formControlName="displayName" autocomplete="name" maxlength="100" />
           </label>
-          <label class="mb-4" for="email">Email
-            <input id="email" type="email" [value]="user()?.email || ''" disabled />
+          <label class="!mb-0" for="email">Email
+            <input class="!px-2.5 !py-2 !text-[.8rem]" id="email" type="email" [value]="user()?.email || ''" disabled />
           </label>
-          <button class="primary-button" type="submit" [disabled]="profileForm.invalid || profileSaving || !profileForm.dirty">
+          <button class="primary-button mt-auto self-start !px-3.5 !py-2 !text-[.78rem]" type="submit" [disabled]="profileForm.invalid || profileSaving || !profileForm.dirty">
             {{ profileSaved ? 'Saved' : (profileSaving ? 'Saving…' : 'Save profile') }}
           </button>
         </form>
       </article>
 
-      <article class="panel">
-        <div class="panel-heading mb-[1.1rem]"><h2>Preferences</h2><p>These settings stay on this device.</p></div>
-        <form [formGroup]="form" (ngSubmit)="savePreferences()">
-          <label class="mb-4" for="pageSize">Applications page size
-            <select id="pageSize" formControlName="pageSize">
-              <option [ngValue]="10">10 per page</option>
-              <option [ngValue]="20">20 per page</option>
-              <option [ngValue]="50">50 per page</option>
-            </select>
-          </label>
-          <button class="primary-button" type="submit">{{ saved ? 'Saved' : 'Save preferences' }}</button>
-        </form>
-
-        <div class="mt-5 border-t border-af-divider pt-4">
-          <div class="panel-heading mb-3">
-            <div>
-              <h2>Change password</h2>
-              <p>Use at least 8 characters. Other sessions will be signed out.</p>
-            </div>
+      <article class="panel flex h-full flex-col !p-4">
+        <div class="panel-heading mb-3">
+          <div>
+            <h2>Security</h2>
+            <p>At least 8 characters. Other sessions will be signed out.</p>
           </div>
-          @if (passwordError) {
-            <div class="mb-3 rounded-af-sm border border-af-danger-border bg-af-danger-soft p-[.7rem] text-[.78rem] text-af-danger">{{ passwordError }}</div>
-          }
-          @if (passwordSaved) {
-            <div class="mb-3 rounded-af-sm border border-af-border bg-af-accent-soft p-[.7rem] text-[.78rem] text-af-success-deep">Password updated.</div>
-          }
-          <form [formGroup]="passwordForm" (ngSubmit)="savePassword()">
-            <label class="mb-3" for="currentPassword">Current password
-              <input id="currentPassword" type="password" formControlName="currentPassword" autocomplete="current-password" />
+        </div>
+        @if (passwordError) {
+          <div class="mb-2.5 rounded-af-sm border border-af-danger-border bg-af-danger-soft px-2.5 py-2 text-[.74rem] text-af-danger">{{ passwordError }}</div>
+        }
+        @if (passwordSaved) {
+          <div class="mb-2.5 rounded-af-sm border border-af-border bg-af-accent-soft px-2.5 py-2 text-[.74rem] text-af-success-deep">Password updated.</div>
+        }
+        <form class="flex flex-1 flex-col justify-between gap-3" [formGroup]="passwordForm" (ngSubmit)="savePassword()">
+          <div class="flex flex-col gap-3">
+            <label class="!mb-0" for="currentPassword">Current password
+              <input class="!px-2.5 !py-2 !text-[.8rem]" id="currentPassword" type="password" formControlName="currentPassword" autocomplete="current-password" />
             </label>
-            <label class="mb-3" for="newPassword">New password
-              <input id="newPassword" type="password" formControlName="newPassword" autocomplete="new-password" />
+            <label class="!mb-0" for="newPassword">New password
+              <input class="!px-2.5 !py-2 !text-[.8rem]" id="newPassword" type="password" formControlName="newPassword" autocomplete="new-password" />
             </label>
-            <label class="mb-4" for="confirmNewPassword">Confirm new password
-              <input id="confirmNewPassword" type="password" formControlName="confirmNewPassword" autocomplete="new-password" />
+            <label class="!mb-0" for="confirmNewPassword">Confirm password
+              <input class="!px-2.5 !py-2 !text-[.8rem]" id="confirmNewPassword" type="password" formControlName="confirmNewPassword" autocomplete="new-password" />
             </label>
             @if (passwordForm.controls.confirmNewPassword.touched && passwordForm.hasError('mismatch')) {
-              <p class="m-0 mb-3 text-[.72rem] text-af-danger">Passwords do not match.</p>
+              <p class="m-0 text-[.72rem] text-af-danger">Passwords do not match.</p>
             }
-            <button class="primary-button" type="submit" [disabled]="passwordForm.invalid || passwordSaving">
-              {{ passwordSaving ? 'Updating…' : 'Update password' }}
-            </button>
-          </form>
-        </div>
+          </div>
+          <button class="primary-button self-start !px-3.5 !py-2 !text-[.78rem]" type="submit" [disabled]="passwordForm.invalid || passwordSaving">
+            {{ passwordSaving ? 'Updating…' : 'Update password' }}
+          </button>
+        </form>
       </article>
 
-      <article class="panel">
+      <article class="panel !p-4">
         <div class="panel-heading mb-3">
           <div>
             <h2>Email notifications</h2>
             <p>24h, 1h, and due emails. Verified email required.</p>
           </div>
         </div>
-
         @if (notificationError) {
-          <div class="mb-2 rounded-af-sm border border-af-danger-border bg-af-danger-soft px-2.5 py-2 text-[.74rem] text-af-danger">{{ notificationError }}</div>
+          <div class="mb-2.5 rounded-af-sm border border-af-danger-border bg-af-danger-soft px-2.5 py-2 text-[.74rem] text-af-danger">{{ notificationError }}</div>
         }
-
         @if (notificationsLoading) {
           <p class="m-0 text-[.78rem] text-af-text-muted">Loading notification settings…</p>
         } @else {
           <form class="text-left" [formGroup]="notificationForm" (ngSubmit)="saveNotifications()">
-            <div class="mb-3 grid grid-cols-2 gap-x-4 gap-y-1 max-[520px]:grid-cols-1">
+            <div class="mb-3 grid grid-cols-2 gap-x-3 gap-y-0 max-[520px]:grid-cols-1">
               <app-notification-toggle-row
                 [control]="reminderControl"
                 title="Reminders"
-                description="Follow-ups and deadlines you create"
+                description="Follow-ups and deadlines"
               />
               <app-notification-toggle-row
                 [control]="interviewControl"
@@ -133,20 +124,42 @@ import { NotificationToggleRowComponent } from './notification-toggle-row.compon
                 description="Hired or Rejected updates"
               />
             </div>
-            <button class="primary-button" type="submit" [disabled]="notificationsSaving">
-              {{ notificationsSaved ? 'Saved' : (notificationsSaving ? 'Saving…' : 'Save') }}
+            <button class="primary-button !px-3.5 !py-2 !text-[.78rem]" type="submit" [disabled]="notificationsSaving">
+              {{ notificationsSaved ? 'Saved' : (notificationsSaving ? 'Saving…' : 'Save notifications') }}
             </button>
           </form>
         }
       </article>
 
-      <article class="panel">
-        <div class="panel-heading mb-[1.1rem]"><h2>Workspace</h2><p>Quick links and session controls.</p></div>
-        <div class="flex flex-wrap gap-[.7rem]">
-          <a class="secondary-button" routerLink="/companies"><mat-icon>business</mat-icon> Manage companies</a>
-          <button class="danger-button" type="button" (click)="logout()" [disabled]="loggingOut">
-            <mat-icon class="!size-[18px] !text-[18px]">logout</mat-icon> {{ loggingOut ? 'Signing out…' : 'Sign out' }}
+      <article class="panel !p-4">
+        <div class="panel-heading mb-3">
+          <div>
+            <h2>Preferences</h2>
+            <p>Device settings and session controls.</p>
+          </div>
+        </div>
+        <form class="mb-4" [formGroup]="form" (ngSubmit)="savePreferences()">
+          <label class="!mb-2.5" for="pageSize">Applications page size
+            <select class="!px-2.5 !py-2 !text-[.8rem]" id="pageSize" formControlName="pageSize">
+              <option [ngValue]="10">10 per page</option>
+              <option [ngValue]="20">20 per page</option>
+              <option [ngValue]="50">50 per page</option>
+            </select>
+          </label>
+          <button class="primary-button !px-3.5 !py-2 !text-[.78rem]" type="submit">
+            {{ saved ? 'Saved' : 'Save preferences' }}
           </button>
+        </form>
+        <div class="border-t border-af-divider pt-3">
+          <div class="flex flex-wrap gap-2">
+            <a class="secondary-button !px-3 !py-2 !text-[.78rem]" routerLink="/companies">
+              <mat-icon class="!size-[16px] !text-[16px]">business</mat-icon> Companies
+            </a>
+            <button class="danger-button !px-3 !py-2 !text-[.78rem]" type="button" (click)="logout()" [disabled]="loggingOut">
+              <mat-icon class="!size-[16px] !text-[16px]">logout</mat-icon>
+              {{ loggingOut ? 'Signing out…' : 'Sign out' }}
+            </button>
+          </div>
         </div>
       </article>
     </section>

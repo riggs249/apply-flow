@@ -69,6 +69,7 @@ $hanaptracker-theme: mat.define-theme((
   --af-radius-lg: 12px;
   --af-shadow: 0 2px 10px rgba(20, 27, 36, 0.04);
   --af-font: 'Plus Jakarta Sans', sans-serif;
+  --af-font-display: 'Yeseva One', serif;
 }
 
 body {
@@ -77,6 +78,17 @@ body {
   font-family: var(--af-font);
   background: var(--af-canvas);
   @include mat.all-component-themes($hanaptracker-theme);
+}
+
+h1,
+h2,
+.empty h2,
+.panel-heading h2,
+.section-title h2,
+.form-card h2,
+.auth-card h1,
+.auth-card strong {
+  font-family: var(--af-font-display);
 }
 
 mat-icon {

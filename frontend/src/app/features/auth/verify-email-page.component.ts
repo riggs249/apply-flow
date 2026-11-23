@@ -30,9 +30,12 @@ export class VerifyStatusComponent {
         aria-hidden="true"
       ></div>
       <section class="auth-card relative z-[1] w-full max-w-[420px] rounded-2xl border border-[rgba(255,255,255,.12)] bg-af-surface p-9 text-center shadow-[0_18px_40px_rgba(10,20,24,.28)]">
-        <div class="mb-6 flex items-center justify-center gap-[.55rem] text-[1.35rem] font-[750] tracking-[-.04em] text-af-text">
-          <span class="flex size-[2.1rem] items-center justify-center rounded-lg bg-af-accent text-[.95rem] font-bold text-white">H</span>
-          <strong>Hanap<span class="text-af-accent">Tracker</span></strong>
+        <div class="mb-6 flex flex-col items-center gap-[.35rem]">
+          <div class="flex items-center justify-center gap-[.55rem] text-[1.35rem] font-[750] tracking-[-.04em] text-af-text">
+            <span class="flex size-[2.1rem] items-center justify-center rounded-lg bg-af-accent text-[.95rem] font-bold text-white">H</span>
+            <strong>Hanap<span class="text-af-accent">Tracker</span></strong>
+          </div>
+          <p class="m-0 max-w-[22rem] text-center text-[.68rem] leading-snug text-af-text-muted">Hiring and Application Navigation and Activity Platform</p>
         </div>
         @if (status === 'loading') {
           <app-verify-status icon="hourglass_top" title="Verifying your email…" message="One moment while we activate your account." />

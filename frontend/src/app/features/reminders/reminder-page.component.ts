@@ -35,7 +35,15 @@ import { ReminderService } from './reminder.service';
         <div class="flex justify-end gap-[.65rem] border-t border-af-divider pt-4"><button class="secondary-button" type="button" (click)="closeForm()">Cancel</button><button class="primary-button" type="submit" [disabled]="saving">{{ saving ? 'Saving…' : 'Save reminder' }}</button></div>
       </form>
     }
-    @if (loading) { <app-loading-state message="Loading reminders…" /> } @else {
+    @if (loading) { <app-loading-state message="Loading reminders…" /> }
+    @else if (!reminders.length) {
+      <div class="empty">
+        <mat-icon>notifications_none</mat-icon>
+        <h2>No reminders yet</h2>
+        <p>Add a follow-up or deadline so nothing slips through.</p>
+      </div>
+    }
+    @else {
       @for (group of groups; track group.key) {
         @if (group.items.length) {
           <section class="mb-5"><div class="mx-0 mb-[.65rem] mt-2 flex items-center gap-2"><h2 class="m-0 text-[.88rem] text-af-text-secondary">{{ group.title }}</h2><span class="rounded-md bg-af-border-soft px-[.45rem] py-[.2rem] text-[.68rem] text-af-text-muted">{{ group.items.length }}</span></div>

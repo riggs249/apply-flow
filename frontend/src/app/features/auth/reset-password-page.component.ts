@@ -23,9 +23,12 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
         aria-hidden="true"
       ></div>
       <section class="auth-card relative z-[1] w-full max-w-[400px] rounded-2xl border border-[rgba(255,255,255,.12)] bg-af-surface p-9 shadow-[0_18px_40px_rgba(10,20,24,.28)]">
-        <div class="flex items-center gap-[.55rem] text-[1.35rem] font-[750] tracking-[-.04em] text-af-text">
-          <span class="flex size-[2.1rem] items-center justify-center rounded-lg bg-af-accent text-[.95rem] font-bold text-white">H</span>
-          <strong>Hanap<span class="text-af-accent">Tracker</span></strong>
+        <div class="flex flex-col gap-[.35rem]">
+          <div class="flex items-center gap-[.55rem] text-[1.35rem] font-[750] tracking-[-.04em] text-af-text">
+            <span class="flex size-[2.1rem] items-center justify-center rounded-lg bg-af-accent text-[.95rem] font-bold text-white">H</span>
+            <strong>Hanap<span class="text-af-accent">Tracker</span></strong>
+          </div>
+          <p class="m-0 text-[.68rem] leading-snug text-af-text-muted">Hiring and Application Navigation and Activity Platform</p>
         </div>
         <div class="mb-7 mt-[2.8rem]">
           <p class="m-0 mb-[.45rem] text-[.72rem] font-bold uppercase tracking-[.1em] text-af-accent">Account recovery</p>
