@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { LoginPageComponent } from './login-page.component';
@@ -18,6 +18,7 @@ describe('LoginPageComponent', () => {
       imports: [LoginPageComponent],
       providers: [
         provideAnimationsAsync(),
+        { provide: ActivatedRoute, useValue: {} },
         { provide: AuthService, useValue: auth },
         { provide: Router, useValue: router },
       ],
