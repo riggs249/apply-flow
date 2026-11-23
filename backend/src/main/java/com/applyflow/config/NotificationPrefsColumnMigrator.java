@@ -33,12 +33,12 @@ public class NotificationPrefsColumnMigrator implements ApplicationRunner {
         jdbcTemplate.execute("""
                 CREATE TABLE IF NOT EXISTS password_reset_tokens (
                     id uuid PRIMARY KEY,
-                    created_at timestamptz,
-                    updated_at timestamptz,
+                    created_at timestamp with time zone,
+                    updated_at timestamp with time zone,
                     user_id uuid NOT NULL REFERENCES app_users(id),
                     token_hash varchar(64) NOT NULL UNIQUE,
-                    expires_at timestamptz NOT NULL,
-                    used_at timestamptz
+                    expires_at timestamp with time zone NOT NULL,
+                    used_at timestamp with time zone
                 )
                 """);
         log.info("Ensured notification preference columns, lead-email timestamps, and password_reset_tokens");
@@ -47,15 +47,15 @@ public class NotificationPrefsColumnMigrator implements ApplicationRunner {
     private void ensureLeadEmailColumns(String table) {
         jdbcTemplate.execute("""
                 ALTER TABLE %s
-                ADD COLUMN IF NOT EXISTS emailed_at timestamptz
+                ADD COLUMN IF NOT EXISTS emailed_at timestamp with time zone
                 """.formatted(table));
         jdbcTemplate.execute("""
                 ALTER TABLE %s
-                ADD COLUMN IF NOT EXISTS emailed_24h_at timestamptz
+                ADD COLUMN IF NOT EXISTS emailed_24h_at timestamp with time zone
                 """.formatted(table));
         jdbcTemplate.execute("""
                 ALTER TABLE %s
-                ADD COLUMN IF NOT EXISTS emailed_1h_at timestamptz
+                ADD COLUMN IF NOT EXISTS emailed_1h_at timestamp with time zone
                 """.formatted(table));
     }
 
