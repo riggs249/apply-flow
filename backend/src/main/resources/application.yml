@@ -64,6 +64,11 @@ app:
     process-rate-ms: ${REMINDER_PROCESS_RATE_MS:300000}
   mail:
     from: ${MAIL_FROM:HanapTracker <noreply@hanaptracker.local>}
+    # auto | resend | smtp — Render free blocks SMTP ports; use resend (HTTPS API).
+    provider: ${MAIL_PROVIDER:auto}
+    # Prefer RESEND_API_KEY; falls back to MAIL_PASSWORD when it is a Resend key (re_...).
+    resend-api-key: ${RESEND_API_KEY:${MAIL_PASSWORD:}}
+    resend-api-url: ${RESEND_API_URL:https://api.resend.com/emails}
   storage:
     type: ${STORAGE_TYPE:local}
     upload-dir: ${UPLOAD_DIR:./uploads}
