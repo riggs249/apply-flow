@@ -5,6 +5,11 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+    hikari:
+      # Keep the pool small for Render + Supabase free/starter connection limits.
+      maximum-pool-size: ${DB_POOL_SIZE:5}
+      minimum-idle: ${DB_POOL_MIN_IDLE:1}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:30000}
   jpa:
     hibernate:
       ddl-auto: ${DDL_AUTO:update}
@@ -23,16 +28,40 @@ spring:
       mail.smtp.starttls.enable: ${MAIL_SMTP_STARTTLS:true}
 
 server:
-  port: ${SERVER_PORT:8080}
+  # Render injects PORT; local/Docker keep using SERVER_PORT or 8080.
+  port: ${PORT:${SERVER_PORT:8080}}
+  # Honor X-Forwarded-* from Render/Vercel so rate limits key on the real client IP.
+  forward-headers-strategy: framework
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:true}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:true}
 
 app:
+  # Single canonical origin used in verification / reset / notification links.
   frontend-url: ${FRONTEND_URL:http://localhost:4200}
+  # Optional comma-separated browser origins for CORS (Vercel prod + previews).
+  # Falls back to FRONTEND_URL when empty.
+  cors-origins: ${CORS_ORIGINS:}
   upload-dir: ${UPLOAD_DIR:./uploads}
   notifications:
-    # How often to check 24h / 1h / due emails for reminders, interviews, assessments
-    lead-process-rate-ms: ${NOTIFICATION_LEAD_PROCESS_RATE_MS:${REMINDER_PROCESS_RATE_MS:60000}}
+    # Default 5 minutes — friendlier for Render free/starter than 60s.
+    lead-process-rate-ms: ${NOTIFICATION_LEAD_PROCESS_RATE_MS:${REMINDER_PROCESS_RATE_MS:300000}}
   reminders:
-    process-rate-ms: ${REMINDER_PROCESS_RATE_MS:60000}
+    process-rate-ms: ${REMINDER_PROCESS_RATE_MS:300000}
   mail:
     from: ${MAIL_FROM:HanapTracker <noreply@hanaptracker.local>}
   storage:
@@ -48,3 +77,13 @@ app:
     refresh-token-days: ${JWT_REFRESH_TOKEN_DAYS:30}
     verification-token-hours: ${EMAIL_VERIFICATION_TOKEN_HOURS:24}
     password-reset-token-hours: ${PASSWORD_RESET_TOKEN_HOURS:1}
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    window-seconds: ${RATE_LIMIT_WINDOW_SECONDS:60}
+    login-per-window: ${RATE_LIMIT_LOGIN_PER_WINDOW:10}
+    register-per-window: ${RATE_LIMIT_REGISTER_PER_WINDOW:5}
+    # forgot-password + resend-verification (protects SMTP quota)
+    email-per-window: ${RATE_LIMIT_EMAIL_PER_WINDOW:3}
+    token-per-window: ${RATE_LIMIT_TOKEN_PER_WINDOW:20}
+    default-per-window: ${RATE_LIMIT_DEFAULT_PER_WINDOW:30}
+    evict-interval-ms: ${RATE_LIMIT_EVICT_INTERVAL_MS:600000}

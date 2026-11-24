@@ -3,7 +3,7 @@ import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { BaseChartDirective } from 'ng2-charts';
+import { BaseChartDirective, provideCharts, withDefaultRegisterables } from 'ng2-charts';
 import { ChartData, ChartOptions } from 'chart.js';
 import { PageHeaderComponent } from '../../shared/components/page-header/page-header.component';
 import { StatCardComponent } from '../../shared/components/stat-card/stat-card.component';
@@ -26,6 +26,7 @@ interface ChartOption<T extends string> {
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
+  providers: [provideCharts(withDefaultRegisterables())],
   imports: [
     ReactiveFormsModule,
     MatIconModule,

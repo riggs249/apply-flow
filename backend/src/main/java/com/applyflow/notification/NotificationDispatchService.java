@@ -7,6 +7,7 @@ import com.applyflow.application.entity.JobApplication;
 import com.applyflow.application.entity.Reminder;
 import com.applyflow.application.entity.ReminderType;
 import com.applyflow.auth.service.EmailService;
+import com.applyflow.config.FrontendUrls;
 import com.applyflow.user.entity.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,13 +36,14 @@ public class NotificationDispatchService {
             @Value("${app.frontend-url}") String frontendUrl
     ) {
         this.emailService = emailService;
-        this.frontendUrl = frontendUrl.endsWith("/") ? frontendUrl.substring(0, frontendUrl.length() - 1) : frontendUrl;
+        this.frontendUrl = FrontendUrls.canonical(frontendUrl);
     }
 
     public boolean sendReminderLead(Reminder reminder, LeadWindow window) {
         User user = reminder.getUser();
+        // true = handled (sent or intentionally skipped); false would retry forever
         if (!canNotify(user, user != null && user.isNotifyReminderEmail(), "reminder", reminder.getId())) {
-            return false;
+            return true;
         }
         JobApplication application = reminder.getApplication();
         List<EmailDetailRow> details = new ArrayList<>();
@@ -73,7 +75,7 @@ public class NotificationDispatchService {
     public boolean sendInterviewLead(Interview interview, LeadWindow window) {
         User user = interview.getApplication().getUser();
         if (!canNotify(user, user.isNotifyInterviewEmail(), "interview", interview.getId())) {
-            return false;
+            return true;
         }
         JobApplication application = interview.getApplication();
         List<EmailDetailRow> details = new ArrayList<>();
@@ -105,7 +107,7 @@ public class NotificationDispatchService {
     public boolean sendAssessmentLead(Assessment assessment, LeadWindow window) {
         User user = assessment.getApplication().getUser();
         if (!canNotify(user, user.isNotifyAssessmentEmail(), "assessment", assessment.getId())) {
-            return false;
+            return true;
         }
         JobApplication application = assessment.getApplication();
         List<EmailDetailRow> details = new ArrayList<>();

@@ -10,4 +10,5 @@ RUN addgroup -S applyflow && adduser -S applyflow -G applyflow
 COPY --from=build --chown=applyflow:applyflow /workspace/target/*.jar app.jar
 USER applyflow
 EXPOSE 8080
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError"
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

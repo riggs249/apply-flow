@@ -51,4 +51,19 @@ class LeadWindowEvaluatorTest {
 
         assertThat(windows).isEmpty();
     }
+
+    @Test
+    void expireMissedWindowsMarksPastBands() {
+        Instant now = Instant.parse("2026-01-10T12:00:00Z");
+        Instant eventAt = now.minus(5, ChronoUnit.MINUTES);
+        LeadEmailMarks marks = new LeadEmailMarks();
+
+        LeadWindowEvaluator.expireMissedWindows(eventAt, now, marks);
+
+        assertThat(marks.getEmailed24hAt()).isNotNull();
+        assertThat(marks.getEmailed1hAt()).isNotNull();
+        assertThat(marks.isUnset(LeadWindow.DUE)).isTrue();
+        assertThat(LeadWindowEvaluator.windowsToSend(eventAt, now, marks))
+                .containsExactly(LeadWindow.DUE);
+    }
 }
