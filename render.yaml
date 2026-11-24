@@ -2,8 +2,10 @@ services:
   - type: web
     name: applyflow-backend
     runtime: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    # Monorepo: paths below are relative to rootDir (see Render monorepo docs).
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /actuator/health
     envVars:
       - key: STORAGE_TYPE
