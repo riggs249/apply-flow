@@ -15,6 +15,7 @@ import com.applyflow.auth.entity.RefreshToken;
 import com.applyflow.auth.repository.EmailVerificationTokenRepository;
 import com.applyflow.auth.repository.PasswordResetTokenRepository;
 import com.applyflow.common.exception.ResourceNotFoundException;
+import com.applyflow.config.FrontendUrls;
 import com.applyflow.notification.NotificationEmailMessage;
 import com.applyflow.user.dto.ChangePasswordRequest;
 import com.applyflow.user.entity.User;
@@ -72,7 +73,7 @@ public class AuthServiceImpl implements AuthService {
         this.verificationTokenRepository = verificationTokenRepository;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.emailService = emailService;
-        this.frontendUrl = frontendUrl.endsWith("/") ? frontendUrl.substring(0, frontendUrl.length() - 1) : frontendUrl;
+        this.frontendUrl = FrontendUrls.canonical(frontendUrl);
         this.verificationTokenHours = verificationTokenHours;
         this.passwordResetTokenHours = passwordResetTokenHours;
     }

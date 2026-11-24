@@ -2,51 +2,147 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
 import { guestGuard } from './core/auth/guest.guard';
 import { AppLayoutComponent } from './layout/app-layout/app-layout.component';
-import { DashboardPageComponent } from './features/dashboard/dashboard-page.component';
-import { LoginPageComponent } from './features/auth/login-page.component';
-import { RegisterPageComponent } from './features/auth/register-page.component';
-import { CheckEmailPageComponent } from './features/auth/check-email-page.component';
-import { VerifyEmailPageComponent } from './features/auth/verify-email-page.component';
-import { ForgotPasswordPageComponent } from './features/auth/forgot-password-page.component';
-import { ResetPasswordPageComponent } from './features/auth/reset-password-page.component';
-import { ApplicationListPageComponent } from './features/applications/application-list-page.component';
-import { ApplicationFormPageComponent } from './features/applications/application-form-page.component';
-import { ApplicationDetailPageComponent } from './features/applications/application-detail-page.component';
-import { ApplicationBoardPageComponent } from './features/applications/application-board-page.component';
-import { InterviewPageComponent } from './features/interviews/interview-page.component';
-import { AssessmentPageComponent } from './features/assessments/assessment-page.component';
-import { ReminderPageComponent } from './features/reminders/reminder-page.component';
-import { CompanyPageComponent } from './features/companies/company-page.component';
-import { ResumePageComponent } from './features/resumes/resume-page.component';
-import { SettingsPageComponent } from './features/settings/settings-page.component';
 
 export const routes: Routes = [
-  { path: 'login', component: LoginPageComponent, canActivate: [guestGuard], title: 'Sign in · HanapTracker' },
-  { path: 'register', component: RegisterPageComponent, canActivate: [guestGuard], title: 'Create account · HanapTracker' },
-  { path: 'check-email', component: CheckEmailPageComponent, canActivate: [guestGuard], title: 'Verify email · HanapTracker' },
-  { path: 'forgot-password', component: ForgotPasswordPageComponent, canActivate: [guestGuard], title: 'Forgot password · HanapTracker' },
-  { path: 'reset-password/:token', component: ResetPasswordPageComponent, canActivate: [guestGuard], title: 'Reset password · HanapTracker' },
-  { path: 'reset-password', component: ResetPasswordPageComponent, canActivate: [guestGuard], title: 'Reset password · HanapTracker' },
-  { path: 'v/:token', component: VerifyEmailPageComponent, title: 'Verify email · HanapTracker' },
-  { path: 'verify-email', component: VerifyEmailPageComponent, title: 'Verify email · HanapTracker' },
+  {
+    path: 'login',
+    loadComponent: () => import('./features/auth/login-page.component').then((m) => m.LoginPageComponent),
+    canActivate: [guestGuard],
+    title: 'Sign in · HanapTracker',
+  },
+  {
+    path: 'register',
+    loadComponent: () => import('./features/auth/register-page.component').then((m) => m.RegisterPageComponent),
+    canActivate: [guestGuard],
+    title: 'Create account · HanapTracker',
+  },
+  {
+    path: 'check-email',
+    loadComponent: () => import('./features/auth/check-email-page.component').then((m) => m.CheckEmailPageComponent),
+    canActivate: [guestGuard],
+    title: 'Verify email · HanapTracker',
+  },
+  {
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('./features/auth/forgot-password-page.component').then((m) => m.ForgotPasswordPageComponent),
+    canActivate: [guestGuard],
+    title: 'Forgot password · HanapTracker',
+  },
+  {
+    path: 'reset-password/:token',
+    loadComponent: () =>
+      import('./features/auth/reset-password-page.component').then((m) => m.ResetPasswordPageComponent),
+    canActivate: [guestGuard],
+    title: 'Reset password · HanapTracker',
+  },
+  {
+    path: 'reset-password',
+    loadComponent: () =>
+      import('./features/auth/reset-password-page.component').then((m) => m.ResetPasswordPageComponent),
+    canActivate: [guestGuard],
+    title: 'Reset password · HanapTracker',
+  },
+  {
+    path: 'v/:token',
+    loadComponent: () =>
+      import('./features/auth/verify-email-page.component').then((m) => m.VerifyEmailPageComponent),
+    title: 'Verify email · HanapTracker',
+  },
+  {
+    path: 'verify-email',
+    loadComponent: () =>
+      import('./features/auth/verify-email-page.component').then((m) => m.VerifyEmailPageComponent),
+    title: 'Verify email · HanapTracker',
+  },
   {
     path: '',
     component: AppLayoutComponent,
     canActivate: [authGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-      { path: 'dashboard', component: DashboardPageComponent, title: 'Dashboard · HanapTracker' },
-      { path: 'applications', component: ApplicationListPageComponent, title: 'Applications · HanapTracker' },
-      { path: 'applications/new', component: ApplicationFormPageComponent, title: 'Add application · HanapTracker' },
-      { path: 'applications/board', component: ApplicationBoardPageComponent, title: 'Kanban board · HanapTracker' },
-      { path: 'applications/:id/edit', component: ApplicationFormPageComponent, title: 'Edit application · HanapTracker' },
-      { path: 'applications/:id', component: ApplicationDetailPageComponent, title: 'Application · HanapTracker' },
-      { path: 'companies', component: CompanyPageComponent, title: 'Companies · HanapTracker' },
-      { path: 'resumes', component: ResumePageComponent, title: 'Resumes · HanapTracker' },
-      { path: 'interviews', component: InterviewPageComponent, title: 'Interviews · HanapTracker' },
-      { path: 'assessments', component: AssessmentPageComponent, title: 'Assessments · HanapTracker' },
-      { path: 'reminders', component: ReminderPageComponent, title: 'Reminders · HanapTracker' },
-      { path: 'settings', component: SettingsPageComponent, title: 'Settings · HanapTracker' },
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./features/dashboard/dashboard-page.component').then((m) => m.DashboardPageComponent),
+        title: 'Dashboard · HanapTracker',
+      },
+      {
+        path: 'applications',
+        loadComponent: () =>
+          import('./features/applications/application-list-page.component').then(
+            (m) => m.ApplicationListPageComponent
+          ),
+        title: 'Applications · HanapTracker',
+      },
+      {
+        path: 'applications/new',
+        loadComponent: () =>
+          import('./features/applications/application-form-page.component').then(
+            (m) => m.ApplicationFormPageComponent
+          ),
+        title: 'Add application · HanapTracker',
+      },
+      {
+        path: 'applications/board',
+        loadComponent: () =>
+          import('./features/applications/application-board-page.component').then(
+            (m) => m.ApplicationBoardPageComponent
+          ),
+        title: 'Kanban board · HanapTracker',
+      },
+      {
+        path: 'applications/:id/edit',
+        loadComponent: () =>
+          import('./features/applications/application-form-page.component').then(
+            (m) => m.ApplicationFormPageComponent
+          ),
+        title: 'Edit application · HanapTracker',
+      },
+      {
+        path: 'applications/:id',
+        loadComponent: () =>
+          import('./features/applications/application-detail-page.component').then(
+            (m) => m.ApplicationDetailPageComponent
+          ),
+        title: 'Application · HanapTracker',
+      },
+      {
+        path: 'companies',
+        loadComponent: () =>
+          import('./features/companies/company-page.component').then((m) => m.CompanyPageComponent),
+        title: 'Companies · HanapTracker',
+      },
+      {
+        path: 'resumes',
+        loadComponent: () =>
+          import('./features/resumes/resume-page.component').then((m) => m.ResumePageComponent),
+        title: 'Resumes · HanapTracker',
+      },
+      {
+        path: 'interviews',
+        loadComponent: () =>
+          import('./features/interviews/interview-page.component').then((m) => m.InterviewPageComponent),
+        title: 'Interviews · HanapTracker',
+      },
+      {
+        path: 'assessments',
+        loadComponent: () =>
+          import('./features/assessments/assessment-page.component').then((m) => m.AssessmentPageComponent),
+        title: 'Assessments · HanapTracker',
+      },
+      {
+        path: 'reminders',
+        loadComponent: () =>
+          import('./features/reminders/reminder-page.component').then((m) => m.ReminderPageComponent),
+        title: 'Reminders · HanapTracker',
+      },
+      {
+        path: 'settings',
+        loadComponent: () =>
+          import('./features/settings/settings-page.component').then((m) => m.SettingsPageComponent),
+        title: 'Settings · HanapTracker',
+      },
     ],
   },
   { path: '**', redirectTo: '' },

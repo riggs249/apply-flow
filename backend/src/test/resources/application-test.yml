@@ -17,3 +17,11 @@ app:
     jwt-secret: test-secret-test-secret-test-secret-test-secret
     access-token-minutes: 15
     refresh-token-days: 30
+  rate-limit:
+    enabled: true
+    window-seconds: 60
+    login-per-window: 100
+    register-per-window: 100
+    email-per-window: 100
+    token-per-window: 100
+    default-per-window: 100
