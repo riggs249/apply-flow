@@ -3,6 +3,8 @@ package com.applyflow.common.exception;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -31,6 +33,14 @@ public class GlobalExceptionHandler {
         exception.getBindingResult().getFieldErrors()
                 .forEach(error -> validationErrors.put(error.getField(), error.getDefaultMessage()));
         return error(HttpStatus.BAD_REQUEST, "Request validation failed", request, validationErrors);
+    }
+
+    @ExceptionHandler({BadCredentialsException.class, AuthenticationException.class})
+    public ResponseEntity<ApiError> handleUnauthorized(
+            AuthenticationException exception,
+            HttpServletRequest request
+    ) {
+        return error(HttpStatus.UNAUTHORIZED, "Invalid email or password", request, Map.of());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

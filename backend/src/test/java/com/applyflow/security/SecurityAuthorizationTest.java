@@ -53,4 +53,16 @@ class SecurityAuthorizationTest {
                 .andExpect(jsonPath("$.validationErrors.email").exists())
                 .andExpect(jsonPath("$.validationErrors.password").exists());
     }
+
+    @Test
+    void forgotPasswordIgnoresExpiredBearerToken() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/forgot-password")
+                        .header("Authorization", "Bearer not-a-valid-jwt")
+                        .contentType("application/json")
+                        .content("""
+                                {"email":"someone@example.com"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").exists());
+    }
 }
